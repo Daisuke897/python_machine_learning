@@ -133,3 +133,9 @@ Iris-setosaの50枚の花とIris-versicolorの50枚の花に対応する先頭�
 
 #+RESULTS:
 [[file:images/02_07.png]]
+
+2次元のデータセットの決定境界を可視化したい
+
+#+begin_src python :session :results file link
+  from matplotlib.colors import ListedColormap
+#+end_src
