@@ -84,7 +84,7 @@ Iris-setosaの50枚の花とIris-versicolorの50枚の花に対応する先頭�
   # 1-100行目の目的変数を抽出
   y = df.iloc[0:100, 4].values
   # Iris-setosaを-1, Iris-versicolorを1に変換
-  y = np.where(y == "Itis-setosa", -1, 1)
+  y = np.where(y == "Iris-setosa", -1, 1)
   # 1-100行目の1, 3列目を抽出
   X = df.iloc[0:100, [0, 2]].values
 #+end_src
@@ -139,6 +139,8 @@ Iris-setosaの50枚の花とIris-versicolorの50枚の花に対応する先頭�
 #+begin_src python :session :results file link
   from matplotlib.colors import ListedColormap
 
+  plt.close('all')
+
   def plot_decision_regions(X, y, classifier, resolution = 0.02):
 
       # マーカーとカラーマップの準備
@@ -154,4 +156,33 @@ Iris-setosaの50枚の花とIris-versicolorの50枚の花に対応する先頭�
                              np.arange(x2_min, x2_max, resolution))
       # 各特徴量を1次元配列に変換して予測を実行
       Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
+      Z = Z.reshape(xx1.shape)
+      plt.contourf(xx1, xx2, Z, alpha=0.3, cmap=cmap)
+      plt.xlim(xx1.min(), xx1.max())
+      plt.ylim(xx2.min(), xx2.max())
+
+      # クラスごとに訓練データをプロット
+      for idx, cl in enumerate(np.unique(y)):
+          plt.scatter(x=X[y == cl, 0],
+                      y=X[y == cl, 1],
+                      alpha=0.8,
+                      c=colors[idx],
+                      marker=markers[idx],
+                      label=cl,
+                      edgecolor="black")
+
+  plot_decision_regions(X, y, classifier=ppn)
+  plt.xlabel("sepal length [cm]")
+  plt.ylabel("pepal length [cm]")
+
+  plt.legend(loc="upper left")
+
+  fname = "images/02_08.png"
+
+  plt.savefig(fname)
+
+  fname
 #+end_src
+
+#+RESULTS:
+[[file:images/02_08.png]]
