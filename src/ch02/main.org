@@ -186,3 +186,185 @@ Iris-setosaの50枚の花とIris-versicolorの50枚の花に対応する先頭�
 
 #+RESULTS:
 [[file:images/02_08.png]]
+
+** ADALINEをPythonで実装する
+
+#+begin_src python :session
+  import numpy as np
+
+
+  class AdalineGD(object):
+      """ADAptive LInear NEuron classifier."""
+
+      def __init__(self, eta=0.01, n_iter=50, random_state=1):
+          self.eta = eta
+          self.n_iter = n_iter
+          self.random_state = random_state
+
+      def fit(self, X, y):
+          """訓練データに適合させる"""
+          rgen = np.random.RandomState(self.random_state)
+          # 正規分布に従う乱数を生成
+          # locは平均、scaleは標準偏差である。
+          self.w_ = rgen.normal(loc=0.0, scale=0.01, size=1 + X.shape[1])
+          self.cost_ = []
+
+          for i in range(self.n_iter):
+              net_input = self.net_input(X)
+
+              output = self.activation(net_input)
+              errors = (y - output)
+              self.w_[1:] += self.eta * X.T.dot(errors)
+              self.w_[0] += self.eta * errors.sum()
+              cost = (errors**2).sum() / 2.0
+              self.cost_.append(cost)
+
+          return self
+
+      def net_input(self, X):
+          """Calculate net input"""
+          return np.dot(X, self.w_[1:]) + self.w_[0]
+
+      def activation(self, X):
+          """Compute linear activation"""
+          return X
+
+      def predict(self, X):
+          """Return class label after unit step"""
+          return np.where(self.activation(self.net_input(X)) >= 0.0, 1, -1)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results file link
+  plt.close('all')
+  # 描画領域を1行2列に分割
+  fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
+
+  ada1 = AdalineGD(n_iter=10, eta=0.01).fit(X, y)
+  ax[0].plot(range(1, len(ada1.cost_) + 1), np.log10(ada1.cost_), marker='o')
+  ax[0].set_xlabel('Epochs')
+  ax[0].set_ylabel('log(Sum-squared-error)')
+  ax[0].set_title('Adaline - Learning rate 0.01')
+
+  ada2 = AdalineGD(n_iter=10, eta=0.0001).fit(X, y)
+  ax[1].plot(range(1, len(ada2.cost_) + 1), ada2.cost_, marker='o')
+  ax[1].set_xlabel('Epochs')
+  ax[1].set_ylabel('Sum-squared-error')
+  ax[1].set_title('Adaline - Learning rate 0.0001')
+
+  fname = "images/02_11.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/02_11.png]]
+
+** 特徴量のスケーリングを通じて勾配降下法を改善する
+標準化というスケーリング手法を用いる
+データセットに標準正規分布のゼロ平均と単位分散という特性が与えられる
+平均をずらして中心が0になるようにする。
+$x_{j}^{\prime} = \frac{x_{j} - \mu_{j}}{\sigma_{j}}$
+
+標準化の実現
+#+begin_src python :session
+  X_std = np.copy(X)
+
+  X_std[:, 0] = (X[:, 0] - X[:, 0].mean()) / X[:, 0].std()
+  X_std[:, 1] = (X[:, 1] - X[:, 1].mean()) / X[:, 1].std()
+#+end_src
+
+#+RESULTS:
+
+標準化後は、学習率0.01と小さなエポック数に基づいてADALINEを再び訓練し、収束することを確認する
+
+#+begin_src python :session :results file link
+  plt.close('all')
+
+  ada_gd = AdalineGD(n_iter=15, eta=0.01)
+  ada_gd.fit(X_std, y)
+
+  plot_decision_regions(X_std, y, classifier=ada_gd)
+  plt.title('Adaline - Gradient Descent')
+  plt.xlabel('sepal length [standardized]')
+  plt.ylabel('petal length [standardized]')
+  plt.legend(loc='upper left')
+  plt.tight_layout()
+
+  fname = "images/02_14_1.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/02_14_1.png]]
+
+#+begin_src python :session :results file link
+  plt.close('all')
+
+  plt.plot(range(1, len(ada_gd.cost_) + 1), ada_gd.cost_, marker='o')
+  plt.xlabel('Epochs')
+  plt.ylabel('Sum-squared-error')
+
+  plt.tight_layout()
+
+  fname = "images/02_14_2.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/02_14_2.png]]
+
+** 確率的勾配降下法
+訓練データごとに段階的に重みを更新する
+
+#+begin_src python :session
+  from numpy.random import seed
+
+  class AdalineSGD(object):
+      """ADAptive LInear NEuron classifier."""
+
+      def __init__(self, eta=0.01, n_iter=10, shuffle=True, random_state=None):
+          self.eta = eta
+          self.n_iter = n_iter
+          self.w_initialized = False
+          self.shuffle = shuffle
+          self.random_state = random_state
+
+      def fit(self, X, y):
+          """ Fit training data. """
+
+          self._initialize_weights(X.shape[1])
+          self.cost_ = []
+
+          for i in range(self.n_iter):
+              if self.shuffle:
+                  X, y = self._shuffle(X, y)
+              cost = []
+              for xi, target in zip(X, y):
+                  cost.append(self._update_weights(xi, target))
+              ave_cost = sum(cost) / len(y)
+              self.cost_.append(avg_cost)
+
+          return self
+
+      def partial_fit(self, X, y):
+          """Fit training data without reinitializing the weights"""
+          if not self.w_initialized:
+              self._initialize_weights(X.shape[1])
+          if y.ravel().shape[0] > 1:
+              for xi, target in zip(X, y):
+                  self._update_weights(xi, target)
+          else:
+              self._update_weights(X, y)
+
+          return self
+#+end_src
