@@ -174,3 +174,46 @@ predictメゾットを使って予測を行える
 [[file:images/03_01.png]]
 
 線形の決定境界で区切られるが、線形分離が可能な状況は稀
+
+* ロジスティック回帰
+2値分類のための線形モデル
+
+#+begin_src python :session :results file link
+  import matplotlib.pyplot as plt
+  import numpy as np
+
+  def sigmoid(z):
+      return 1.0 / (1.0 + np.exp(-z))
+
+  z = np.arange(-7, 7, 0.1)
+
+  phi_z = sigmoid(z)
+
+  plt.close("all")
+
+  plt.plot(z, phi_z)
+
+  plt.axvline(0.0, color='k')
+
+  plt.ylim(-0.1, 1.1)
+
+  plt.xlabel("z")
+  plt.ylabel("$\phi (z)$")
+
+  plt.yticks([0.0, 0.5, 1.0])
+
+  ax = plt.gca()
+
+  ax.yaxis.grid(True)
+
+  plt.tight_layout()
+
+  fname = "images/03_02.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/03_02.png]]
