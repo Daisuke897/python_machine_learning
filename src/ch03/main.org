@@ -217,3 +217,17 @@ predictメゾットを使って予測を行える
 
 #+RESULTS:
 [[file:images/03_02.png]]
+
+* ロジスティック関数の重みの学習
+
+#+begin_src python :session
+  def cost_1(z):
+      return - np.log(sigmoid(z))
+
+  def cost_0(z):
+      return - np.log(1 - sigmoid(z))
+
+  z = np.arange(-10, 10, 0.1)
+#+end_src
+
+#+RESULTS:
