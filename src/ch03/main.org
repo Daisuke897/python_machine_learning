@@ -375,3 +375,36 @@ scikit-learnを使ってロジスティック回帰モデルの訓練をする
 
 #+RESULTS:
 [[file:images/03_06.png]]
+
+訓練データが特定のクラスに所属するクラスは"predict_proba"メゾットを使って計算できる。
+テストデータの最初の3つのデータ点の確率を次のように予測できる。
+#+begin_src python :session :results value
+  lr.predict_proba(X_test_std[:3, :])
+#+end_src
+
+#+RESULTS:
+| 6.63770505e-09 | 0.144747233 |     0.85525276 |
+|     0.83403121 |  0.16596879 | 3.20815954e-13 |
+|    0.848822884 | 0.151177116 |  2.5799835e-14 |
+
+クラスラベルの予測値を取得
+#+begin_src python :session :results value
+  lr.predict_proba(X_test_std[:3, :]).argmax(axis=1)
+#+end_src
+
+#+RESULTS:
+| 2 | 0 | 0 |
+
+#+begin_src python :session :results value
+  lr.predict(X_test_std[:3, :])
+#+end_src
+
+#+RESULTS:
+| 2 | 0 | 0 |
+
+#+begin_src python :session :results value
+  lr.predict(X_test_std[0, :].reshape(1, -1))
+#+end_src
+
+#+RESULTS:
+| 2 |
