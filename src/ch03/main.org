@@ -546,3 +546,58 @@ SVMが人気の理由 非線形問題を解くために、「カーネル化」�
 
 #+RESULTS:
 [[file:images/03_14.png]]
+
+γパラメータの値を大きくすると、訓練データの影響力が大きくなり、到達範囲が広くなる。
+決定境界が狭くなり、突き出したようになる。
+
+#+begin_src python :session :results file link
+  svm = SVC(kernel="rbf", random_state=1, gamma=0.2, C=1.0)
+  svm.fit(X_train_std, y_train)
+
+  plt.close("all")
+
+  plot_decision_regions(X_combined_std, y_combined,
+                        classifier=svm, test_idx=range(105, 150))
+
+  plt.xlabel("petal length [standardized]")
+  plt.ylabel("petal width [standardized]")
+
+  plt.legend(loc="upper left")
+  plt.tight_layout()
+
+  fname="images/03_15.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/03_15.png]]
+
+#+begin_src python :session :results file link
+  svm = SVC(kernel="rbf", random_state=1, gamma=100.0, C=1.0)
+  svm.fit(X_train_std, y_train)
+
+  plt.close("all")
+
+  plot_decision_regions(X_combined_std, y_combined,
+                        classifier=svm, test_idx=range(105, 150))
+
+  plt.xlabel("petal length [standardized]")
+  plt.ylabel("petal width [standardized]")
+
+  plt.legend(loc="upper left")
+  plt.tight_layout()
+
+  fname="images/03_16.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/03_16.png]]
+
+過学習やバリアンスの制御でもγパラメータの最適化が重要な役割を果たすことを示している。
