@@ -601,3 +601,22 @@ SVMが人気の理由 非線形問題を解くために、「カーネル化」�
 [[file:images/03_16.png]]
 
 過学習やバリアンスの制御でもγパラメータの最適化が重要な役割を果たすことを示している。
+
+* 決定木学習
+決定木分類器は、意味解釈可能性に配慮する魅力的なモデルである。
+
+
+#+begin_src python :session :results output
+  import matplotlib.pyplot as plt
+  import numpy as np
+
+  # ジニ不純度の関数を定義
+  def gini(p):
+      return (p)*(1 - (p)) + (1 - p) * (1 - (1 -p))
+
+  # エントロピーの関数を定義
+  def entropy(p):
+      return p*np.log2(p) - (1 - p)*np.log2((1 - p))
+#+end_src
+
+#+RESULTS:
