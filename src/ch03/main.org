@@ -606,7 +606,7 @@ SVMが人気の理由 非線形問題を解くために、「カーネル化」�
 決定木分類器は、意味解釈可能性に配慮する魅力的なモデルである。
 
 
-#+begin_src python :session :results output
+#+begin_src python :session :results file link
   import matplotlib.pyplot as plt
   import numpy as np
 
@@ -616,7 +616,88 @@ SVMが人気の理由 非線形問題を解くために、「カーネル化」�
 
   # エントロピーの関数を定義
   def entropy(p):
-      return p*np.log2(p) - (1 - p)*np.log2((1 - p))
+      return - p*np.log2(p) - (1 - p)*np.log2((1 - p))
+
+  # 誤差分類の関数を定義
+  def error(p):
+      return 1 - np.max([p, 1 - p])
+
+  # 確率を表す配列を生成
+  x = np.arange(0.0, 1.0, 0.01)
+
+  # 配列の値をもとにエントロピー、分類誤差を計算
+  ent = [entropy(p) if p != 0 else None for p in x]
+  sc_ent = [e * 0.5 if e else None for e in ent]
+  err = [error(i) for i in x]
+  # 図の作成を開始
+  plt.close("all")
+  fig = plt.figure()
+  ax = plt.subplot(111)
+  # エントロピー、ジニ不純度、分類誤差をそれぞれループ処理
+  for i, lab, ls, c in zip([ent, sc_ent, gini(x), err],
+                           ['Entropy', 'Entropy (scaled)', 'Gini impurity', 'Misclassification error'],
+                           ['-', '-', '--', '-.'],
+                           ['black', 'lightgray', 'red', 'green', 'cyan']):
+      line = ax.plot(x, i, label=lab, linestyle=ls, lw=2, color=c)
+
+  ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
+            ncol=5, fancybox=True, shadow=False)
+
+  ax.axhline(y=0.5, linewidth=1, color='k', linestyle='--')
+  ax.axhline(y=1.0, linewidth=1, color='k', linestyle='--')
+  plt.ylim([0, 1.1])
+  plt.xlabel('p(i=1)')
+  plt.ylabel('impurity index')
+
+  fname = "images/03_19.png"
+  plt.savefig('images/03_19.png', bbox_inches='tight')
+  fname
 #+end_src
 
 #+RESULTS:
+[[file:images/03_19.png]]
+
+** 決定木の構築
+scikit-learnを利用して、不純度の条件としてジニ不純度を使って最大の深さが4の決定木を訓練する。
+
+#+begin_src python :session :results file link
+  from sklearn.tree import DecisionTreeClassifier
+  # ジニ不純度を指標とする決定木のインスタンスを生成
+  tree_model = DecisionTreeClassifier(criterion="gini", max_depth=4, random_state=1)
+  # 決定木のモデルを訓練データを適合させる
+  tree_model.fit(X_train, y_train)
+  X_combined = np.vstack((X_train, X_test))
+  y_combined = np.hstack((y_train, y_test))
+
+  plt.close("all")
+
+  plot_decision_regions(X_combined, y_combined, classifier=tree_model,
+                        test_idx=range(105, 150))
+
+  plt.xlabel('petal length [cm]')
+  plt.ylabel('petal width [cm]')
+  plt.legend(loc='upper left')
+  plt.tight_layout()
+
+  fname = "images/03_20.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/03_20.png]]
+
+訓練後の決定木モデルを可視化できる
+#+begin_src python :session :results file link
+  from sklearn import tree
+  plt.close("all")
+  tree.plot_tree(tree_model)
+  fname = "images/03_21_1.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/03_21_1.png]]
