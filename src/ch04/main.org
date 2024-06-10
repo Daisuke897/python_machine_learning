@@ -1,0 +1,99 @@
+データ前処理 よりよい訓練データセットの構築
+
+#+begin_src emacs-lisp
+  (pyvenv-activate "~/project/python_machine_learning")
+#+end_src
+
+#+RESULTS:
+
+* 欠測データへの対処
+
+** 表形式のデータで欠測値を特定する
+#+begin_src python :session :results value
+  import pandas as pd
+  from io import StringIO
+
+  csv_data = '''A,B,C,D
+  1.0,2.0,3.0,4.0
+  5.0,6.0,,8.0
+  10.0,11.0,12.0,'''
+
+  df = pd.read_csv(StringIO(csv_data))
+
+  df
+#+end_src
+
+#+RESULTS:
+:       A     B     C    D
+: 0   1.0   2.0   3.0  4.0
+: 1   5.0   6.0   NaN  8.0
+: 2  10.0  11.0  12.0  NaN
+
+#+begin_src python :session :results value
+  # 各特徴量の欠測値をカウント
+  df.isnull().sum()
+#+end_src
+
+#+RESULTS:
+: A    0
+: B    0
+: C    1
+: D    1
+: dtype: int64
+
+#+begin_src python :session :results value
+  # 欠測値を含む行を削除
+  df_copied = df.copy()
+  df_copied.dropna()
+#+end_src
+
+#+RESULTS:
+:      A    B    C    D
+: 0  1.0  2.0  3.0  4.0
+
+#+begin_src python :session :results value
+  # 欠測値を含む列を削除
+  df_copied = df.copy()
+  df_copied.dropna(axis=1)
+#+end_src
+
+#+RESULTS:
+:       A     B
+: 0   1.0   2.0
+: 1   5.0   6.0
+: 2  10.0  11.0
+
+#+begin_src python :session :results value
+  # すべての列がNaNである行だけを削除
+  df_copied = df.copy()
+  df_copied.dropna(how="all")
+#+end_src
+
+#+RESULTS:
+:       A     B     C    D
+: 0   1.0   2.0   3.0  4.0
+: 1   5.0   6.0   NaN  8.0
+: 2  10.0  11.0  12.0  NaN
+
+#+begin_src python :session :results value
+  # 非NaN値が4つ未満の行を削除
+  df_copied = df.copy()
+  df_copied.dropna(thresh=4)
+#+end_src
+
+#+RESULTS:
+:      A    B    C    D
+: 0  1.0  2.0  3.0  4.0
+
+#+begin_src python :session :results value
+  # 特定の列にNaNが含まれている行だけを削除
+  df_copied = df.copy()
+  df_copied.dropna(subset=["C"])
+#+end_src
+
+#+RESULTS:
+:       A     B     C    D
+: 0   1.0   2.0   3.0  4.0
+: 2  10.0  11.0  12.0  NaN
+
+欠測値をすべて削除しすぎると解析の信頼性が失われる場合がある。
