@@ -177,3 +177,67 @@
 : 1     L
 : 2    XL
 : Name: size, dtype: object
+
+** クラスラベルのエンコーディング
+多くの機械学習ライブラリは、クラスラベルが整数値としてエンコードされていることを要求する
+#+begin_src python :session :results value
+  import numpy as np
+  # クラスラベルと整数を対応させるディクショナリを作成
+  class_mapping = {label: idx for idx, label in enumerate(np.unique(df["classlabel"]))}
+  class_mapping
+#+end_src
+
+#+RESULTS:
+| class1 | : | 0 | class2 | : | 1 |
+
+マッピングディクショナリを作成したらクラスラベルを整数に変換できる
+#+begin_src python :session :results value
+  # クラスラベルを整数に変換
+  df["classlabel"] = df["classlabel"].map(class_mapping)
+
+  df
+#+end_src
+
+#+RESULTS:
+:    color size  price  classlabel
+: 0  green    M   10.1           1
+: 1    red    L   13.5           0
+: 2   blue   XL   15.3           1
+
+逆に戻す
+
+#+begin_src python :session :results value
+  # 整数とクラスラベルを対応させるディクショナリを作成
+  inv_class_mapping = {v: k for k, v in class_mapping.items()}
+
+  df["classlabel"] = df["classlabel"].map(inv_class_mapping)
+  df
+#+end_src
+
+#+RESULTS:
+:    color size  price classlabel
+: 0  green    M   10.1     class2
+: 1    red    L   13.5     class1
+: 2   blue   XL   15.3     class2
+
+scikit_learn の LabelEncoder というクラスを使う手がある
+#+begin_src python :session :results value
+  from sklearn.preprocessing import LabelEncoder
+
+  class_le = LabelEncoder()
+
+  y = class_le.fit_transform(df["classlabel"].values)
+
+  y
+#+end_src
+
+#+RESULTS:
+| 1 | 0 | 1 |
+
+もとの文字列に戻すこともできる
+#+begin_src python :session :results value
+  class_le.inverse_transform(y)
+#+end_src
+
+#+RESULTS:
+| class2 | class1 | class2 |
