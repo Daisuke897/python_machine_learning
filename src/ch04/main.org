@@ -241,3 +241,20 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 
 #+RESULTS:
 | class2 | class1 | class2 |
+
+
+** one-hotエンコーディング
+
+#+begin_src python :session :results value
+  from sklearn.preprocessing import OneHotEncoder
+  X = df[["color", "size", "price"]].values
+
+  color_ohe = OneHotEncoder()
+
+  color_ohe.fit_transform(X[:, 0].reshape(-1, 1)).toarray()
+#+end_src
+
+#+RESULTS:
+| 0 | 1 | 0 |
+| 0 | 0 | 1 |
+| 1 | 0 | 0 |
