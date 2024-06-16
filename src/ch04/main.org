@@ -258,3 +258,33 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 | 0 | 1 | 0 |
 | 0 | 0 | 1 |
 | 1 | 0 | 0 |
+
+複数の特徴量からなる配列の列を選択的に変換したい場合は、ColumnTransformerを使うことができる
+
+#+begin_src python :session :results value
+  from sklearn.compose import ColumnTransformer
+
+  X = df[["color", "size", "price"]].values
+
+  c_transf = ColumnTransformer(
+      [("onehot", OneHotEncoder(), [0]),
+       ("nothing", "passthrough", [1, 2])]
+  )
+
+  c_transf.fit_transform(X).astype(float)
+#+end_src
+
+#+RESULTS:
+| 0 | 1 | 0 | 1 | 10.1 |
+| 0 | 0 | 1 | 2 | 13.5 |
+| 1 | 0 | 0 | 3 | 15.3 |
+
+#+begin_src python :session :results value
+  pd.get_dummies(df[["price", "color", "size"]])
+#+end_src
+
+#+RESULTS:
+:    price  size  color_blue  color_green  color_red
+: 0   10.1     1       False         True      False
+: 1   13.5     2       False        False       True
+: 2   15.3     3        True        False      False
