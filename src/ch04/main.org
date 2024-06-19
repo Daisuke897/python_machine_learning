@@ -367,3 +367,14 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 #+end_src
 
 #+RESULTS:
+
+標準化は、平均値0、標準偏差1となるように変換する
+#+begin_src python :session :results output
+  ex = np.array([0, 1, 2, 3, 4, 5])
+  print("standardized:", (ex - ex.mean()) / ex.std())
+  print("normalized:", (ex - ex.min()) / (ex.max() - ex.min()))
+#+end_src
+
+#+RESULTS:
+: standardized: [-1.46385011 -0.87831007 -0.29277002  0.29277002  0.87831007  1.46385011]
+: normalized: [0.  0.2 0.4 0.6 0.8 1. ]
