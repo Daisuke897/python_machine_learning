@@ -413,3 +413,33 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 #+RESULTS:
 : Training accuracy: 1.0
 : Test accuracy: 1.0
+
+#+begin_src python :session :results value
+  lr.intercept_
+#+end_src
+
+#+RESULTS:
+| -1.26365149 | -1.2161853 | -2.37045738 |
+
+#+begin_src python :session :results value
+  lr.coef_
+#+end_src
+
+#+RESULTS:
+|  1.24558829 |  0.18015457 |  0.74641195 | -1.16375219 |           0 | 0 |  1.15956864 | 0 | 0 |           0 |           0 |  0.55651008 |  2.50902233 |
+| -1.53638988 | -0.38749579 | -0.99469457 |  0.36486744 | -0.05983547 | 0 |  0.66805876 | 0 | 0 | -1.93457629 |  1.23365417 |           0 | -2.23285976 |
+|  0.13580713 |  0.16830607 |  0.35726337 |           0 |           0 | 0 | -2.43817198 | 0 | 0 |  1.56367504 | -0.81928499 | -0.49225973 |           0 |
+
+#+begin_src python :session :results output
+  import matplotlib.pyplot as plt
+
+  fig = plt.figure()
+  ax = plt.subplot(111)
+
+  colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black',
+            'pink', 'lightgreen', 'lightblue', 'gray', 'indigo', 'orange']
+
+  weights, params = [], []
+
+
+#+end_src
