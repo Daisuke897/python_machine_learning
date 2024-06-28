@@ -334,12 +334,12 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 #+end_src
 
 #+RESULTS:
-:    Class label  Alcohol  Malic acid   Ash  Alcalinity of ash  ...  Proanthocyanins  Color intensity   Hue  OD280/OD315 of diluted wines  Proline
-: 0            1    14.23        1.71  2.43               15.6  ...             2.29             5.64  1.04                          3.92     1065
-: 1            1    13.20        1.78  2.14               11.2  ...             1.28             4.38  1.05                          3.40     1050
-: 2            1    13.16        2.36  2.67               18.6  ...             2.81             5.68  1.03                          3.17     1185
-: 3            1    14.37        1.95  2.50               16.8  ...             2.18             7.80  0.86                          3.45     1480
-: 4            1    13.24        2.59  2.87               21.0  ...             1.82             4.32  1.04                          2.93      735
+:    Class label  Alcohol  ...  OD280/OD315 of diluted wines  Proline
+: 0            1    14.23  ...                          3.92     1065
+: 1            1    13.20  ...                          3.40     1050
+: 2            1    13.16  ...                          3.17     1185
+: 3            1    14.37  ...                          3.45     1480
+: 4            1    13.24  ...                          2.93      735
 : 
 : [5 rows x 14 columns]
 
@@ -419,19 +419,21 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 #+end_src
 
 #+RESULTS:
-| -1.26365149 | -1.2161853 | -2.37045738 |
+| -1.26381687 | -1.21588204 | -2.36994736 |
 
 #+begin_src python :session :results value
   lr.coef_
 #+end_src
 
 #+RESULTS:
-|  1.24558829 |  0.18015457 |  0.74641195 | -1.16375219 |           0 | 0 |  1.15956864 | 0 | 0 |           0 |           0 |  0.55651008 |  2.50902233 |
-| -1.53638988 | -0.38749579 | -0.99469457 |  0.36486744 | -0.05983547 | 0 |  0.66805876 | 0 | 0 | -1.93457629 |  1.23365417 |           0 | -2.23285976 |
-|  0.13580713 |  0.16830607 |  0.35726337 |           0 |           0 | 0 | -2.43817198 | 0 | 0 |  1.56367504 | -0.81928499 | -0.49225973 |           0 |
+|  1.24626033 |  0.18060028 |  0.74625834 | -1.16440253 |           0 | 0 |  1.15980938 | 0 | 0 |           0 |           0 |  0.55841973 |  2.50885084 |
+| -1.53692194 | -0.38728691 | -0.99541779 |  0.36489698 | -0.05931481 | 0 |  0.66827044 | 0 | 0 | -1.93402044 |  1.23392055 |           0 | -2.23178579 |
+|  0.13577054 |  0.16841335 |  0.35722922 |           0 |           0 | 0 | -2.43803245 | 0 | 0 |  1.56393128 | -0.81857187 | -0.49264086 |           0 |
 
-#+begin_src python :session :results output
+#+begin_src python :session :results file link
   import matplotlib.pyplot as plt
+
+  plt.close("all")
 
   fig = plt.figure()
   ax = plt.subplot(111)
@@ -441,5 +443,38 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 
   weights, params = [], []
 
+  for c in np.arange(-4., 6.):
+      lr = LogisticRegression(penalty="l1", C=10.**c, solver="liblinear",
+                              multi_class="ovr", random_state=0)
+      lr.fit(X_train_std, y_train)
+      weights.append(lr.coef_[1])
+      params.append(10**c)
 
+  weights = np.array(weights)
+
+  for column, color in zip(range(weights.shape[1]), colors):
+
+      plt.plot(params, weights[:, column], label=df_wine.columns[column+1],
+               color=color)
+
+  plt.axhline(0, color="black", linestyle="--", linewidth=3)
+
+  plt.xlim([10**(-5), 10**5])
+
+  plt.ylabel("weight coefficient")
+  plt.xlabel("C")
+
+  plt.xscale("log")
+  plt.legend(loc="upper left")
+  ax.legend(loc="upper center", bbox_to_anchor=(1.38, 1.03), ncol=1, fancybox=True)
+
+  fname = "images/04_07.png"
+
+  plt.savefig(fname,
+              bbox_inches='tight', pad_inches=0.2)
+
+  fname
 #+end_src
+
+#+RESULTS:
+[[file:images/04_07.png]]
