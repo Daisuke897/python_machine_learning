@@ -478,3 +478,25 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 
 #+RESULTS:
 [[file:images/04_07.png]]
+
+* 逐次特徴量選択アルゴリズム
+特徴量選択による次元削減は、モデルの複雑さを低減し、過学習を回避するもう一つの方法
+次元削減法は特徴量選択と特徴量抽出の2つのカテゴリに分けられる。
+
+逐次後退選択は、元々の特徴量空間の次元を減らすこと
+
+#+begin_src python :session :results output
+  from sklearn.base import clone
+  from itertools import combinations
+  import numpy as np
+  from sklearn.metrics import accuracy_score
+  from sklearn.model_selection import train_test_split
+
+  class SBS():
+      """
+      逐次後退選択 (sequential backward selection)を実行するクラス
+      """
+
+#+end_src
+
+#+RESULTS:
