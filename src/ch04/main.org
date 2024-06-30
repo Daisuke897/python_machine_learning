@@ -499,13 +499,32 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 
       def __init__(self, estimator, k_features, scoring=accuracy_score,
                    test_size=0.25, random_state=1):
-          self.scoring = scoring
-          self.estimator = clone(estimator)
-          self.k_features = k_features
-          self.test_size = test_size
-          self.random_state = random_state
+          self.scoring = scoring  # 特徴量を評価する指標
+          self.estimator = clone(estimator) # 推定器
+          self.k_features = k_features      # 選択する特徴量の個数
+          self.test_size = test_size        # テストデータの割合
+          self.random_state = random_state  # 乱数シードを固定する random_state
 
-        
+      def fit(self, X, y):
+          # 訓練データとテストデータに分割
+          X_train, X_test, y_train, y_test = train_test_split(
+              X, y, test_size = self.test_size, random_state = self.random_state
+          )
+          # すべての特徴量の個数、列インデックス
+          dim = X_train.shape[1]
+          self.indices_ = tuple(range(dim))
+          self.subsets_ = [self.indices_]
+          # すべての特徴量を用いてスコアを算出
+          score = self._calc_score(
+              X_train, y_train, X_test, y_test, self.indices_
+          )
+          self.scores_ = [score]  # スコアを格納
+          # 特徴量が指定した個数になるまで処理を繰り返す
+
+          # 最後に格納したスコア
+          self.k_score_ = self.k_scores_[-1]
+
+          return self
 #+end_src
 
 #+RESULTS:
