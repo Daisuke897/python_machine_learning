@@ -497,6 +497,15 @@ scikit_learn の LabelEncoder というクラスを使う手がある
       逐次後退選択 (sequential backward selection)を実行するクラス
       """
 
+      def __init__(self, estimator, k_features, scoring=accuracy_score,
+                   test_size=0.25, random_state=1):
+          self.scoring = scoring
+          self.estimator = clone(estimator)
+          self.k_features = k_features
+          self.test_size = test_size
+          self.random_state = random_state
+
+        
 #+end_src
 
 #+RESULTS:
