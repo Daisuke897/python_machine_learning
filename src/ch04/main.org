@@ -537,7 +537,7 @@ scikit_learn の LabelEncoder というクラスを使う手がある
               self.indices_ = subsets[best]
               self.subsets_.append(self.indices_)
               # 特徴量の個数を1つだけ減らして次ステップへ
-              dim =- 1
+              dim -= 1
               # スコアを格納
               self.scores_.append(scores[best])
 
@@ -574,3 +574,78 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 #+end_src
 
 #+RESULTS:
+
+#+begin_src python :session :results file link
+  k_feat = [len(k) for k in sbs.subsets_]
+
+  plt.close("all")
+
+  plt.plot(k_feat, sbs.scores_, marker='o')
+  plt.ylim([0.7, 1.02])
+  plt.ylabel("Accuracy")
+  plt.xlabel("Number of features")
+  plt.grid()
+  plt.tight_layout()
+
+  fname = "images/04_08.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/04_08.png]]
+
+#+begin_src python :session :results value
+  sbs.subsets_
+#+end_src
+
+#+RESULTS:
+| 0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 |
+| 0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  9 | 10 | 11 | 12 |    |
+| 0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  9 | 10 | 11 |    |    |
+| 0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  9 | 11 |    |    |    |
+| 0 |  1 |  2 |  3 |  4 |  5 |  7 |  9 | 11 |    |    |    |    |
+| 0 |  1 |  2 |  3 |  5 |  7 |  9 | 11 |    |    |    |    |    |
+| 0 |  1 |  2 |  3 |  5 |  7 | 11 |    |    |    |    |    |    |
+| 0 |  1 |  2 |  3 |  5 | 11 |    |    |    |    |    |    |    |
+| 0 |  1 |  2 |  3 | 11 |    |    |    |    |    |    |    |    |
+| 0 |  1 |  2 | 11 |    |    |    |    |    |    |    |    |    |
+| 0 |  1 | 11 |    |    |    |    |    |    |    |    |    |    |
+| 0 | 11 |    |    |    |    |    |    |    |    |    |    |    |
+| 0 |    |    |    |    |    |    |    |    |    |    |    |    |
+
+#+begin_src python :session :results output
+  k3 = list(sbs.subsets_[10])
+  print(df_wine.columns[1:][k3])
+#+end_src
+
+#+RESULTS:
+: Index(['Alcohol', 'Malic acid', 'OD280/OD315 of diluted wines'], dtype='object')
+
+#+begin_src python :session :results output
+  # 13個すべての特徴量を用いてモデルを適合
+  knn.fit(X_train_std, y_train)
+  # 訓練の正解率を出力
+  print("Training accuracy:", knn.score(X_train_std, y_train))
+  # テストの正解率を出力
+  print("Test accuracy:", knn.score(X_test_std, y_test))
+#+end_src
+
+#+RESULTS:
+: Training accuracy: 0.967741935483871
+: Test accuracy: 0.9629629629629629
+
+#+begin_src python :session :results output
+  # 3つの特徴量を用いてモデルを適合
+  knn.fit(X_train_std[:, k3], y_train)
+  # 訓練の正解率を出力
+  print("Training accuracy:", knn.score(X_train_std[:, k3], y_train))
+  # テストの正解率を出力
+  print("Test accuracy:", knn.score(X_test_std[:, k3], y_test))
+#+end_src
+
+#+RESULTS:
+: Training accuracy: 0.9516129032258065
+: Test accuracy: 0.9259259259259259
