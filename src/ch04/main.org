@@ -706,3 +706,25 @@ scikit_learn の LabelEncoder というクラスを使う手がある
 
 #+RESULTS:
 [[file:images/04_09.png]]
+
+#+begin_src python :session :results output
+  from sklearn.feature_selection import SelectFromModel
+
+  # 特徴量選択オブジェクトを生成（重要度のしきい値を0.1に設定）
+  sfm = SelectFromModel(forest, threshold=0.1, prefit=True)
+  # 特徴量を抽出
+  X_selected = sfm.transform(X_train)
+  print("Number of features that meet this threshold criterion:", X_selected.shape[1])
+
+  for f in range(X_selected.shape[1]):
+      print("%2d) %-*s %f" %
+            (f + 1, 30, feat_labels[indices[f]], importances[indices[f]]))
+#+end_src
+
+#+RESULTS:
+: Number of features that meet this threshold criterion: 5
+:  1) Proline                        0.185453
+:  2) Flavanoids                     0.174751
+:  3) Color intensity                0.143920
+:  4) OD280/OD315 of diluted wines   0.136162
+:  5) Alcohol                        0.118529
