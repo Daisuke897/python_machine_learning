@@ -1,0 +1,63 @@
+次元削減でデータを圧縮する
+
+#+begin_src emacs-lisp
+  (pyvenv-activate "~/project/python_machine_learning")
+#+end_src
+
+#+RESULTS:
+
+* 主成分分析による教師なし次元削減
+
+** 主成分を抽出する
+
+Wineデータ・セットを読み込む
+#+begin_src python :session :results value
+  import numpy as np
+  import pandas as pd
+
+  df_wine = pd.read_csv(
+      'https://archive.ics.uci.edu/'
+      'ml/machine-learning-databases/wine/wine.data',
+      header=None
+  )
+  df_wine.columns = ['Class label', 'Alcohol', 'Malic acid', 'Ash',
+                     'Alcalinity of ash', 'Magnesium', 'Total phenols',
+                     'Flavanoids', 'Nonflavanoid phenols', 'Proanthocyanins',
+                     'Color intensity', 'Hue', 'OD280/OD315 of diluted wines',
+                     'Proline']
+
+
+  print('Class labels', np.unique(df_wine['Class label']))
+  df_wine.head()
+#+end_src
+
+#+RESULTS:
+:    Class label  Alcohol  ...  OD280/OD315 of diluted wines  Proline
+: 0            1    14.23  ...                          3.92     1065
+: 1            1    13.20  ...                          3.40     1050
+: 2            1    13.16  ...                          3.17     1185
+: 3            1    14.37  ...                          3.45     1480
+: 4            1    13.24  ...                          2.93      735
+: 
+: [5 rows x 14 columns]
+
+Wineデータセットを処理して訓練とテストに分割
+分散が1となるように標準化
+
+#+begin_src python :session :results output
+  from sklearn.model_selection import train_test_split
+  from sklearn.preprocessing import StandardScaler
+
+  X = df_wine.iloc[:, 1:].values
+  y = df_wine.iloc[:, 0].values
+
+  X_train, X_test, y_train, y_test = train_test_split(
+      X, y, test_size = 0.3, stratify = y, random_state = 0
+  )
+
+  sc = StandardScaler()
+  X_train_std = sc.fit_transform(X_train)
+  X_test_std = sc.transform(X_test)
+#+end_src
+
+#+RESULTS:
