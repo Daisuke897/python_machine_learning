@@ -32,12 +32,12 @@ Wineデータ・セットを読み込む
 #+end_src
 
 #+RESULTS:
-:    Class label  Alcohol  ...  OD280/OD315 of diluted wines  Proline
-: 0            1    14.23  ...                          3.92     1065
-: 1            1    13.20  ...                          3.40     1050
-: 2            1    13.16  ...                          3.17     1185
-: 3            1    14.37  ...                          3.45     1480
-: 4            1    13.24  ...                          2.93      735
+:    Class label  Alcohol  Malic acid   Ash  Alcalinity of ash  ...  Proanthocyanins  Color intensity   Hue  OD280/OD315 of diluted wines  Proline
+: 0            1    14.23        1.71  2.43               15.6  ...             2.29             5.64  1.04                          3.92     1065
+: 1            1    13.20        1.78  2.14               11.2  ...             1.28             4.38  1.05                          3.40     1050
+: 2            1    13.16        2.36  2.67               18.6  ...             2.81             5.68  1.03                          3.17     1185
+: 3            1    14.37        1.95  2.50               16.8  ...             2.18             7.80  0.86                          3.45     1480
+: 4            1    13.24        2.59  2.87               21.0  ...             1.82             4.32  1.04                          2.93      735
 : 
 : [5 rows x 14 columns]
 
@@ -443,3 +443,62 @@ scikit-learnによる主成分分析
 : 
 : MV 3: [ 0.1992  0.866   0.1682  0.4148 -0.0451 -1.0286 -1.2876  0.8287 -0.7795
 :   0.9649 -1.209  -1.3622 -0.4013]
+
+平均ベクトルを使ってクラス内変動行列を計算する
+
+#+begin_src python :session :results output
+  d = 13                          # 特徴量の個数
+  S_W = np.zeros((d, d))
+  for label, mv in zip(range(1, 4), mean_vecs):
+      class_scatter = np.zeros((d, d))
+      for row in X_train_std[y_train == label]:
+          row, mv = row.reshape(d, 1), mv.reshape(d, 1)
+          class_scatter += (row - mv).dot((row - mv).T)
+      S_W += class_scatter
+
+  print("Within-class scatter matrix: %sx%s" % (S_W.shape[0], S_W.shape[1]))
+#+end_src
+
+#+RESULTS:
+: Within-class scatter matrix: 13x13
+
+変動行列を計算するときは、訓練データセットにおいてクラスレベルが一様に分布していることが前提となる
+しかし、クラスレベルの個数を出力するとこの前提を満たしていないことがわかる。
+
+#+begin_src python :session :results output
+  print("Class label distribution: %s" % np.bincount(y_train)[1:])
+#+end_src
+
+#+RESULTS:
+: Class label distribution: [41 50 33]
+
+スケーリングの必要がある。共分散行列の計算と同じ。
+#+begin_src python :session :results output
+  d = 13                          # 特徴量の個数
+  S_W = np.zeros((d, d))
+  for label, mv in zip(range(1, 4), mean_vecs):
+      class_scatter = np.cov(X_train_std[y_train == label].T)
+      S_W += class_scatter
+
+  print("Scaled within-class scatter matrix: %sx%s" % (S_W.shape[0], S_W.shape[1]))
+#+end_src
+
+#+RESULTS:
+: Scaled within-class scatter matrix: 13x13
+
+クラス間変動行列の計算
+#+begin_src python :session :results output
+  mean_overall = np.mean(X_train_std, axis = 0)
+  d = 13                          # 特徴量の個数
+  S_B = np.zeros((d, d))
+  for i, mean_vec in enumerate(mean_vecs):
+      n = X_train_std[y_train == i + 1, :].shape[0]
+      mean_vec = mean_vec.reshape(d, 1)
+      mean_overall = mean_overall.reshape(d, 1)
+      S_B += (mean_vec - mean_overall).dot((mean_vec - mean_overall).T)
+
+  print("Between-class scatter matrix: %sx%s" % (S_B.shape[0], S_B.shape[1]))
+#+end_src
+
+#+RESULTS:
+: Between-class scatter matrix: 13x13
