@@ -502,3 +502,118 @@ scikit-learnによる主成分分析
 
 #+RESULTS:
 : Between-class scatter matrix: 13x13
+
+#+begin_src python :session :results output
+  # inv関数で逆行列、dot関数で行列積、eig関数で固有値を計算
+  eigen_vals, eigen_vecs = np.linalg.eig(np.linalg.inv(S_W).dot(S_B))
+#+end_src
+
+#+RESULTS:
+
+固有対を計算したあと、固有値を大きいものから降順で並び替えることができる
+#+begin_src python :session :results output
+  eigen_pairs = [(np.abs(eigen_vals[i]), eigen_vecs[:, i])
+                 for i in range(len(eigen_vals))]
+  eigen_pairs = sorted(eigen_pairs, key = lambda k: k[0], reverse = True)
+  print("Eigenvalues in descending order:\n")
+  for eigen_val in eigen_pairs:
+      print(eigen_val[0])
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Eigenvalues in descending order:
+
+9.69591891139966
+3.913566546609941
+1.3364467196749097e-15
+4.538934946114206e-16
+4.538934946114206e-16
+4.440892098500626e-16
+3.259909834474496e-16
+3.259909834474496e-16
+3.158455111826397e-16
+2.790042072741736e-16
+2.790042072741736e-16
+8.066672036203076e-17
+8.066672036203076e-17
+#+end_example
+
+#+begin_src python :session :results file link
+  import matplotlib.pyplot as plt
+  # 固有値の実数部の総和を求める
+  tot = sum(eigen_vals.real)
+  # 分散説明率とその累積和を計算
+  discr = [(i / tot) for i in sorted(eigen_vals.real, reverse=True)]
+  cum_discr = np.cumsum(discr)
+  plt.close("all")
+  plt.bar(range(1, 14), discr, alpha=0.5, align="center",
+          label="Individual \"discriminability\"")
+  plt.step(range(1, 14), cum_discr, where="mid",
+           label="Cumulative \"discriminability\"")
+  plt.ylabel("\"Discriminability\" ratio")
+  plt.xlabel("Linear Discriminants")
+  plt.ylim([-0.1, 1.1])
+  plt.legend(loc = "best")
+  plt.tight_layout()
+
+  fname = "images/05_07.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/05_07.png]]
+
+最も判別力のある2つの固有ベクトルを列方向に並べて、変換行列Wを作成してみよう
+#+begin_src python :session :results output
+  # 2つの固有ベクトルから変換行列を作成
+  w = np.hstack((eigen_pairs[0][1][:, np.newaxis].real,
+                 eigen_pairs[1][1][:, np.newaxis].real))
+  print("Matrix W:\n", w)
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Matrix W:
+ [[-0.1229 -0.4193]
+ [ 0.1009 -0.1458]
+ [ 0.0053 -0.3506]
+ [ 0.1287  0.3337]
+ [-0.0113 -0.0823]
+ [ 0.1866  0.1035]
+ [-0.7535  0.1999]
+ [-0.0746 -0.018 ]
+ [-0.0038  0.0896]
+ [ 0.3083 -0.1808]
+ [-0.0501  0.2674]
+ [-0.3549 -0.0502]
+ [-0.3554 -0.6294]]
+#+end_example
+
+#+begin_src python :session :results file link
+  # 標準化した訓練データに変換行列を掛ける
+  X_train_lda = X_train_std.dot(w)
+  colors = ["r", "b", "g"]
+  markers = ["s", "x", "o"]
+  plt.close("all")
+  for l, c, m in zip(np.unique(y_train), colors, markers):
+      plt.scatter(X_train_lda[y_train == l, 0], X_train_lda[y_train == l, 1] * (-1),
+                  c = c, label = l, marker = m)
+  plt.xlabel("LD 1")
+  plt.ylabel("LD 2")
+  plt.legend(loc = "lower right")
+  plt.tight_layout()
+
+  fname = "images/05_08.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/05_08.png]]
