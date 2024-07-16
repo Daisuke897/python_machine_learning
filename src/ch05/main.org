@@ -697,4 +697,7 @@ RBFカーネルPCAをPythonで実装する
           射影されたデータセット
 
       """
+
+      # M x N次元のデータセットでペアごとのユーグリッド距離の２乗を計算
+      sq_dists = pdist(X, "sqeuclidean")
 #+end_src
