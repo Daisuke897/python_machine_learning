@@ -32,12 +32,12 @@ Wineデータ・セットを読み込む
 #+end_src
 
 #+RESULTS:
-:    Class label  Alcohol  ...  OD280/OD315 of diluted wines  Proline
-: 0            1    14.23  ...                          3.92     1065
-: 1            1    13.20  ...                          3.40     1050
-: 2            1    13.16  ...                          3.17     1185
-: 3            1    14.37  ...                          3.45     1480
-: 4            1    13.24  ...                          2.93      735
+:    Class label  Alcohol  Malic acid   Ash  Alcalinity of ash  ...  Proanthocyanins  Color intensity   Hue  OD280/OD315 of diluted wines  Proline
+: 0            1    14.23        1.71  2.43               15.6  ...             2.29             5.64  1.04                          3.92     1065
+: 1            1    13.20        1.78  2.14               11.2  ...             1.28             4.38  1.05                          3.40     1050
+: 2            1    13.16        2.36  2.67               18.6  ...             2.81             5.68  1.03                          3.17     1185
+: 3            1    14.37        1.95  2.50               16.8  ...             2.18             7.80  0.86                          3.45     1480
+: 4            1    13.24        2.59  2.87               21.0  ...             1.82             4.32  1.04                          2.93      735
 : 
 : [5 rows x 14 columns]
 
@@ -749,3 +749,41 @@ RBFカーネルPCAをPythonで実装する
 #+RESULTS:
 [[file:images/05_12.png]]
 
+標準のPCAを用いてデータセットを主成分に射影する。
+#+begin_src python :session :results file link
+  from sklearn.decomposition import PCA
+  scikit_pca = PCA(n_components = 2)
+  X_spca = scikit_pca.fit_transform(X)
+  plt.close("all")
+  # グラフの数と配置、サイズを指定
+  fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (7, 3))
+  # 1番目のグラフ領域に散布図をプロット
+  ax[0].scatter(X_spca[y == 0, 0], X_spca[y == 0, 1],
+                color = "red", marker = "^", alpha = 0.5)
+  ax[0].scatter(X_spca[y == 1, 0], X_spca[y == 1, 1],
+                color = "blue", marker = "o", alpha = 0.5)
+  # 2番目のグラフ領域に散布図をプロット
+  ax[1].scatter(X_spca[y == 0, 0], np.zeros((50, 1)) + 0.02,
+                color = "red", marker = "^", alpha = 0.5)
+  ax[1].scatter(X_spca[y == 1, 0], np.zeros((50, 1)) - 0.02,
+                color = "blue", marker = "o", alpha = 0.5)
+
+  ax[0].set_xlabel("PC1")
+  ax[0].set_ylabel("PC2")
+  ax[1].set_ylim([-1, 1])
+  ax[1].set_yticks([])
+  ax[1].set_xlabel("PC1")
+
+  plt.tight_layout()
+
+  fname = "images/05_13.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/05_13.png]]
+
+線形分離になっていない。
