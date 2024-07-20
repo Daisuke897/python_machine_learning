@@ -820,3 +820,158 @@ RBFカーネルPCAをPythonで実装する
 
 #+RESULTS:
 [[file:images/05_14.png]]
+
+** 同心円の分離
+
+#+begin_src python :session :results file link
+  import matplotlib.pyplot as plt
+  # 2つの半月型データを作成してプロット
+  from sklearn.datasets import make_circles
+
+  X, y = make_circles(
+      n_samples = 1000,
+      random_state = 123,
+      noise = 0.1,
+      factor = 0.2
+  )
+  plt.close("all")
+  plt.scatter(X[y == 0, 0], X[y == 0, 1], color = "red", marker = "^", alpha = 0.5)
+  plt.scatter(X[y == 1, 0], X[y == 1, 1], color = "blue", marker = "o", alpha = 0.5)
+  plt.tight_layout()
+
+  fname = "images/05_15.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/05_15.png]]
+
+通常のPCAのアプローチ
+
+#+begin_src python :session :results file link
+  from sklearn.decomposition import PCA
+  scikit_pca = PCA(n_components = 2)
+  X_spca = scikit_pca.fit_transform(X)
+  plt.close("all")
+  # グラフの数と配置、サイズを指定
+  fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (7, 3))
+  # 1番目のグラフ領域に散布図をプロット
+  ax[0].scatter(X_spca[y == 0, 0], X_spca[y == 0, 1],
+                color = "red", marker = "^", alpha = 0.5)
+  ax[0].scatter(X_spca[y == 1, 0], X_spca[y == 1, 1],
+                color = "blue", marker = "o", alpha = 0.5)
+  # 2番目のグラフ領域に散布図をプロット
+  ax[1].scatter(X_spca[y == 0, 0], np.zeros((500, 1)) + 0.02,
+                color = "red", marker = "^", alpha = 0.5)
+  ax[1].scatter(X_spca[y == 1, 0], np.zeros((500, 1)) - 0.02,
+                color = "blue", marker = "o", alpha = 0.5)
+
+  ax[0].set_xlabel("PC1")
+  ax[0].set_ylabel("PC2")
+  ax[1].set_ylim([-1, 1])
+  ax[1].set_yticks([])
+  ax[1].set_xlabel("PC1")
+
+  plt.tight_layout()
+
+  fname = "images/05_16.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/05_16.png]]
+
+先程実装したカーネルPCA関数 rdf_kernel_pcaを用いる
+
+
+#+begin_src python :session :results file link
+  from matplotlib.ticker import FormatStrFormatter
+  # カーネルPCA関数を実行
+  X_kpca = rdf_kernel_pca(X, gamma = 15, n_components = 2)
+  fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (7, 3))
+  ax[0].scatter(X_kpca[y == 0, 0], X_kpca[y == 0, 1],
+                color = "red", marker = "^", alpha = 0.5)
+  ax[0].scatter(X_kpca[y == 1, 0], X_kpca[y == 1, 1],
+                color = "blue", marker = "o", alpha = 0.5)
+  ax[1].scatter(X_kpca[y == 0, 0], np.zeros((500, 1)) + 0.02,
+                color = "red", marker = "^", alpha = 0.5)
+  ax[1].scatter(X_kpca[y == 1, 0], np.zeros((500, 1)) - 0.02,
+                color = "blue", marker = "o", alpha = 0.5)
+
+  ax[0].set_xlabel("PC1")
+  ax[0].set_ylabel("PC2")
+  ax[1].set_ylim([-1, 1])
+  ax[1].set_yticks([])
+  ax[1].set_xlabel("PC1")
+
+  plt.tight_layout()
+
+  fname = "images/05_17.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/05_17.png]]
+
+#+begin_src python :session :results output
+  from scipy.spatial.distance import pdist, squareform
+  from numpy import exp
+  from scipy.linalg import eigh
+  import numpy as np
+
+  def rdf_kernel_pca(X, gamma, n_components):
+      """RBFカーネルPCAの実装
+
+      パラメータ
+      ------------
+      X: {NumPy ndarray}, shape = [n_examples, n_features]
+
+      gamma: float
+          RBFカーネルのチューニングパラメータ
+
+      n_components: int
+          返される主成分の個数
+
+      戻り値
+      ------------
+      X_pc: {NumPy ndarray}, shape = [n_examples, k_features]
+          射影されたデータセット
+
+      """
+
+      # M x N次元のデータセットでペアごとのユーグリッド距離の２乗を計算
+      sq_dists = pdist(X, "sqeuclidean")
+
+      # ペアごとの距離を正方行列に変換
+      mat_sq_dists = squareform(sq_dists)
+
+      # 対称カーネル行列を計算
+      K = exp(-gamma * mat_sq_dists)
+
+      # カーネル行列を中心化
+      N = K.shape[0]
+      one_n = np.ones((N, N)) / N
+      K = K - one_n.dot(K) - K.dot(one_n) + one_n.dot(K).dot(one_n)
+
+      # 中心化されたカーネル行列から固有対を取得: scipy.linalg.eigh はそれらを昇順で返す
+      eigvals, eigvecs = eigh(K)
+      eigvals, eigvecs = eigvals[::-1], eigvecs[:, ::-1]
+
+      # 上位k個の固有ベクトル（射影されたデータ点）を収集
+      alphas = np.column_stack([eigvecs[:, i] for i in range(n_components)])
+
+      # 対応する固有値を収集
+      lambdas = [eigvals[i] for i in range(n_components)]
+
+      return alphas, lambdas
+
+#+end_src
