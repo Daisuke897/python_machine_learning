@@ -83,3 +83,70 @@ LabelEncoderを使って、元のクラスラベルの文字列表現 ("M", "B")
 #+RESULTS:
 : Test Accuracy: 0.956
 
+* k分割交差検証を使ったモデルの性能の評価
+
+** ホールドアウト法
+データを訓練データセット、検証データセット、テストデータセットの3つに分割する
+
+** k分割交差検証
+非復元情報を用いて、訓練データセットをランダムにk個に分割する。
+このうちのk-1個をモデルの訓練に使い、1個を性能の評価に使う。
+このk個のモデルを取得し、性能を推定する。
+
+*層化k分割交差検証*
+訓練データセット全体でのクラスレベルの比率が維持される。
+
+#+begin_src python :session :results output
+  import numpy as np
+  from sklearn.model_selection import StratifiedKFold
+  # 分割元データ、分割数、乱数生成器の状態を指定し、
+  # 層化K分割交差検証イテレータを表すStratifiedKFoldクラスのインスタンス化
+  kfold = StratifiedKFold(n_splits = 10).split(X_train, y_train)
+  scores = []
+  # イテレータのインデックスと要素をループ処理：（上から順に）
+  # データをモデルに適合
+  # テストデータの正解率を算出
+  # リストに正解率を追加
+  # 分割の番号、0以上の要素数、正解率を出力
+  for k, (train, test) in enumerate(kfold):
+      pipe_lr.fit(X_train[train], y_train[train])
+      score = pipe_lr.score(X_train[test], y_train[test])
+      scores.append(score)
+      print("Fold: %2d, Class dist.: %s, Acc: %.3f" % (k + 1, np.bincount(y_train[train]), score))
+
+  # 正解率の平均と標準偏差を出力
+  print("\nCV accuracy: %.3f +/- %.3f" % (np.mean(scores), np.std(scores)))
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Fold:  1, Class dist.: [256 153], Acc: 0.935
+Fold:  2, Class dist.: [256 153], Acc: 0.935
+Fold:  3, Class dist.: [256 153], Acc: 0.957
+Fold:  4, Class dist.: [256 153], Acc: 0.957
+Fold:  5, Class dist.: [256 153], Acc: 0.935
+Fold:  6, Class dist.: [257 153], Acc: 0.956
+Fold:  7, Class dist.: [257 153], Acc: 0.978
+Fold:  8, Class dist.: [257 153], Acc: 0.933
+Fold:  9, Class dist.: [257 153], Acc: 0.956
+Fold: 10, Class dist.: [257 153], Acc: 0.956
+
+CV accuracy: 0.950 +/- 0.014
+#+end_example
+
+#+begin_src python :session :results output
+  from sklearn.model_selection import cross_val_score
+  # 交差検証のcross_val_score関数でモデルの正解率を算出
+  # 推定器 estimator, 訓練データX, 予測データy, 分割数cv, CPU数n_jobsを推定
+  scores = cross_val_score(estimator=pipe_lr,
+                           X=X_train, y=y_train,
+                           cv=10, n_jobs=1)
+  print("CV accuracy scores: %s" % scores)
+  print("CV accuracy: %.3f +/- %.3f" % (np.mean(scores), np.std(scores)))
+#+end_src
+
+#+RESULTS:
+: CV accuracy scores: [0.93478261 0.93478261 0.95652174 0.95652174 0.93478261 0.95555556
+:  0.97777778 0.93333333 0.95555556 0.95555556]
+: CV accuracy: 0.950 +/- 0.014
