@@ -301,6 +301,8 @@ C = 0.01 ~ 0.1あたりが最適
 ** グリッドサーチを使ったハイパーパラメータのチューニング
 #+begin_src python :session :results output
   from sklearn.model_selection import GridSearchCV
+  from sklearn.pipeline import make_pipeline
+  from sklearn.preprocessing import StandardScaler
   from sklearn.svm import SVC
 
   pipe_svc = make_pipeline(StandardScaler(), SVC(random_state=1))
@@ -332,3 +334,59 @@ C = 0.01 ~ 0.1あたりが最適
 
 #+RESULTS:
 : Test accuracy: 0.974
+
+** 入れ子式の交差検証によるアルゴリズムの選択
+入れ子式の交差検証では、外側のループでk分割交差検証を使うことで、データを訓練サブセットとテストサブセットに分割する。
+内側のループでは、訓練データセットに対してk分割交差検証を行うことで、モデルを選択する。
+モデルを選択した後、テストデータセットを使ってモデル性能を評価する。
+
+#+begin_src python :session :results output
+  import numpy as np
+  from sklearn.model_selection import cross_val_score
+  gs = GridSearchCV(estimator = pipe_svc,
+                    param_grid = param_grid,
+                    scoring = "accuracy", cv = 2)
+
+  scores = cross_val_score(gs, X_train, y_train, scoring = "accuracy", cv = 5)
+
+  print("CV accuracy: %.3f +/- %.3f" % (np.mean(scores), np.std(scores)))
+#+end_src
+
+#+RESULTS:
+: CV accuracy: 0.974 +/- 0.015
+
+対象として、決定木の深さパラメータをチューニングする
+#+begin_src python :session :results output
+  from sklearn.tree import DecisionTreeClassifier
+  # ハイパーパラメータ値として決定木の深さパラメータを指定し、
+  # グリッドサーチを行うGridSearchCVクラスをインスタンス化
+  gs = GridSearchCV(estimator = DecisionTreeClassifier(random_state = 0),
+                    param_grid = [{"max_depth": [1, 2, 3, 4, 5, 6, 7, None]}],
+                    scoring = "accuracy", cv = 2)
+  scores = cross_val_score(gs,
+                           X_train, y_train,
+                           scoring = "accuracy",
+                           cv = 5)
+  print("CV accuracy: %.3f +/- %.3f" % (np.mean(scores), np.std(scores)))
+#+end_src
+
+#+RESULTS:
+: CV accuracy: 0.934 +/- 0.016
+
+* さまざまな性能評価手法
+
+** 混同行列を解釈する
+混同行列は、分類器の *真陽性*, *真陰性*, *偽陽性*, *偽陰性* の4つ予測の個数を報告する単なる正方行列である。
+
+#+begin_src python :session :results output
+  from sklearn.metrics import confusion_matrix
+  pipe_svc.fit(X_train, y_train)
+  y_pred = pipe_svc.predict(X_test)
+  # テストと予測のデータから混同行列を生成
+  confmat = confusion_matrix(y_true = y_test, y_pred = y_pred)
+  print(confmat)
+#+end_src
+
+#+RESULTS:
+: [[71  1]
+:  [ 2 40]]
