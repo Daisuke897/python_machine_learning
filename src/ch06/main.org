@@ -390,3 +390,82 @@ C = 0.01 ~ 0.1あたりが最適
 #+RESULTS:
 : [[71  1]
 :  [ 2 40]]
+
+誤分類に関する情報を対応付けるには、matplotlibのmatshow関数を使う。
+#+begin_src python :session :results file link
+  import matplotlib.pyplot as plt
+  plt.close("all")
+  # 図のサイズを指定
+  fig, ax = plt.subplots(figsize = (2.5, 2.5))
+  # matshow関数で行列からヒートマップを描画
+  ax.matshow(confmat, cmap = plt.cm.Blues, alpha = 0.3)
+  for i in range(confmat.shape[0]):     # クラス0の繰り返し処理
+      for j in range(confmat.shape[1]): # クラス1の繰り返し処理
+          ax.text(x = j, y = i, s = confmat[i, j], va = "center", ha = "center") # 件数を表示
+
+  plt.xlabel("Predicted label")
+  plt.ylabel("True label")
+  plt.tight_layout()
+
+  fname = "images/06_09.png"
+
+  plt.savefig(fname)
+
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/06_09.png]]
+
+** 分類モデルの適合率と再現率を最適化する
+
+#+begin_src python :session :results output
+  # 適合率、再現率、F1スコアを出力
+  from sklearn.metrics import precision_score
+  from sklearn.metrics import recall_score, f1_score
+  print("Precision: %.3f" % precision_score(y_true = y_test, y_pred = y_pred))
+  print("Recall: %.3f" % recall_score(y_true = y_test, y_pred = y_pred))
+  print("F1: %.3f" % f1_score(y_true = y_test, y_pred = y_pred))
+#+end_src
+
+#+RESULTS:
+: Precision: 0.976
+: Recall: 0.952
+: F1: 0.964
+
+#+begin_src python :session :results output
+  # カスタムの性能指標を出力
+  from sklearn.metrics import make_scorer, f1_score
+  c_gamma_range = [0.01, 0.1, 1.0, 10.0]
+  param_grid = [{"svc__C": c_gamma_range, "svc__kernel": ["linear"]},
+                {"svc__C": c_gamma_range, "svc__gamma": c_gamma_range, "svc__kernel": ["rbf"]}]
+  scorer = make_scorer(f1_score, pos_label = 0)
+  gs = GridSearchCV(estimator = pipe_svc,
+                    param_grid = param_grid,
+                    scoring = scorer,
+                    cv = 10, n_jobs = -1)
+  gs = gs.fit(X_train, y_train)
+  print(gs.best_score_)
+  print(gs.best_params_)
+
+#+end_src
+
+#+RESULTS:
+: 0.9861994953378878
+: {'svc__C': 10.0, 'svc__gamma': 0.01, 'svc__kernel': 'rbf'}
+
+** ROC曲線をプロットする
+
+#+begin_src python :session :results output
+  from sklearn.metrics import roc_curve, auc
+  from scipy import interp
+  # スケーリング、主成分分析、ロジスティック回帰を指定して、Pipelineクラスをインスタンス化
+  pipe_lr = make_pipeline(StandardScaler(), PCA(n_components = 2),
+                          LogisticRegression(penalty = "l2", random_state = 1,
+                                             solver = "lbfgs", c = 100.0))
+  # 2つの特徴量を抽出
+  X_train2 = X_train[:, [4, 14]]
+  # 層化k分割交差検証イテレータを表すStratifiedKFoldクラスをインスタンス化
+  cv = list(StratifiedKFold(n_splits = 3).split(X_train, y_train))
+  plt.close("all")
+#+end_src
