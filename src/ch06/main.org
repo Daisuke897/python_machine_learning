@@ -27,7 +27,7 @@
 : 2  84300903  M  19.69  21.25  ...  0.4504  0.2430  0.3613  0.08758
 : 3  84348301  M  11.42  20.38  ...  0.6869  0.2575  0.6638  0.17300
 : 4  84358402  M  20.29  14.34  ...  0.4000  0.1625  0.2364  0.07678
-: 
+:
 : [5 rows x 32 columns]
 
 30個の特徴量をNumpy配列Xに割り当てる。
@@ -456,16 +456,62 @@ C = 0.01 ~ 0.1あたりが最適
 
 ** ROC曲線をプロットする
 
-#+begin_src python :session :results output
+#+begin_src python :session :results link file
   from sklearn.metrics import roc_curve, auc
-  from scipy import interp
+  from numpy import interp
   # スケーリング、主成分分析、ロジスティック回帰を指定して、Pipelineクラスをインスタンス化
   pipe_lr = make_pipeline(StandardScaler(), PCA(n_components = 2),
                           LogisticRegression(penalty = "l2", random_state = 1,
-                                             solver = "lbfgs", c = 100.0))
+                                             solver = "lbfgs", C = 100.0))
   # 2つの特徴量を抽出
   X_train2 = X_train[:, [4, 14]]
   # 層化k分割交差検証イテレータを表すStratifiedKFoldクラスをインスタンス化
   cv = list(StratifiedKFold(n_splits = 3).split(X_train, y_train))
   plt.close("all")
+  fig = plt.figure(figsize = (7, 5))
+  mean_tpr = 0.0
+
+  # 0から1までの間で100個の要素を生成
+  mean_fpr = np.linspace(0, 1, 100)
+  all_tpr = []
+
+  for i, (train, test) in enumerate(cv):
+      # predict_probaメゾットで確率予測、fitメゾットでモデルに適合させる
+      probas = pipe_lr.fit(X_train2[train],
+                           y_train[train]).predict_proba(X_train2[test])
+      # roc_curve関数でROC曲線の性能を計算してプロット
+      fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label = 1)
+      mean_tpr += interp(mean_fpr, fpr, tpr) # FPR(X軸)とTPR(Y軸)を線形補間
+      mean_tpr[0] = 0.0
+      roc_auc = auc(fpr, tpr)
+      plt.plot(fpr, tpr, label = "ROC fold %d (area = %0.2f)" % (i + 1, roc_auc))
+
+  # 当て推量をプロット
+  plt.plot([0, 1], [0, 1],
+           linestyle = "--", color = (0.6, 0.6, 0.6), label = "Random guessing")
+  # FPR, TPR, ROC AUCそれぞれの平均を計算してプロット
+  mean_tpr /= len(cv)
+  mean_tpr[-1] = 1.0
+  mean_auc = auc(mean_fpr, mean_tpr)
+  plt.plot(mean_fpr, mean_tpr, "k--",
+           label = "Mean ROC (area = %0.2f)" % mean_auc, lw = 2)
+  # 完全に予測が正解したときのROC曲線をプロット
+  plt.plot([0, 0, 1], [0, 1, 1],
+           linestyle = ":", color = "black", label = "Perfect performance")
+  # グラフの各項目を指定
+  plt.xlim([-0.05, 1.05])
+  plt.ylim([-0.05, 1.05])
+  plt.xlabel("False positive rate")
+  plt.ylabel("True positive rate")
+  plt.legend(loc = "lower right")
+  plt.tight_layout()
+
+  fname = "images/06_10.png"
+
+  plt.savefig(fname)
+
+  fname
 #+end_src
+
+#+RESULTS:
+[[file:images/06_10.png]]
