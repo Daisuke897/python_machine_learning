@@ -515,3 +515,72 @@ C = 0.01 ~ 0.1あたりが最適
 
 #+RESULTS:
 [[file:images/06_10.png]]
+
+** 多クラス分類のための性能指標
+マイクロ平均は各クラスの真陽性、真陰性、偽陽性、偽陰性から計算される。
+マクロ平均はそれぞれの問題の性能指標の平均として求める。
+
+#+begin_src python :session :results value
+  from sklearn.metrics import make_scorer
+  from sklearn.metrics import precision_score
+  pre_scorer = make_scorer(score_func=precision_score,
+                           pos_label=1,
+                           greater_is_better=True,
+                           average='micro')
+  pre_scorer
+#+end_src
+
+#+RESULTS:
+: make_scorer(precision_score, response_method='predict', pos_label=1, average=micro)
+
+* クラスの不均衡に対処する
+不均衡なデータセットで分類器を適合させる場合には、正解率以外の性能指標（適合率、再現率、ROC曲線など）を調べるのが合理的
+クラスの不均衡な割合に対処する方法の1つは、少数派クラスに関する誤った予測に大きなペナルティを課す。
+sckit-learnには、resampleという関数が実装されている。
+この関数はデータセットから新しいデータ点を復元抽出する。
+#+begin_src python :session
+  import numpy as np
+  X_imb = np.vstack((X[y == 0], X[y == 1][:40]))
+  y_imb = np.hstack((y[y == 0], y[y == 1][:40]))
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results value
+  y_pred = np.zeros(y_imb.shape[0])
+  np.mean(y_pred == y_imb) * 100
+#+end_src
+
+#+RESULTS:
+: 89.92443324937027
+
+#+begin_src python :session :results output
+  from sklearn.utils import resample
+  print("Number of class 1 examples before:", X_imb[y_imb == 1].shape[0])
+  # データ点の個数がクラス0と同じになるまで新しいデータ点を復元抽出
+  X_upsampled, y_upsampled = resample(X_imb[y_imb == 1],
+                                      y_imb[y_imb == 1],
+                                      replace = True,
+                                      n_samples = X_imb[y_imb == 0].shape[0],
+                                      random_state = 123)
+  print("Number of class 1 examples after:", X_upsampled.shape[0])
+#+end_src
+
+#+RESULTS:
+: Number of class 1 examples before: 40
+: Number of class 1 examples after: 357
+
+#+begin_src python :session
+  X_bal = np.vstack((X[y == 0], X_upsampled))
+  y_bal = np.hstack((y[y == 0], y_upsampled))
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results value
+  y_pred = np.zeros(y_bal.shape[0])
+  np.mean(y_pred == y_bal) * 100
+#+end_src
+
+#+RESULTS:
+: 50.0
