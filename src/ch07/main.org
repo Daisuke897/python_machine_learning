@@ -45,3 +45,107 @@
 
 #+RESULTS:
 [[file:images/07_03.png]]
+
+* 多数決による分類器の結合
+
+** 単純な多数決分類器を実装する
+重み付き多数決の概念をPythonに置き換える
+#+begin_src python :session :results value
+  import numpy as np
+
+  np.argmax(np.bincount([0, 0, 1], weights = [0.2, 0.2, 0.6]))
+#+end_src
+
+#+RESULTS:
+: 1
+
+クラスの確率に基づく重み付き多数決の概念をPythonに置き換える
+#+begin_src python :session :results value
+  ex = np.array([[0.9, 0.1], [0.8, 0.2], [0.4, 0.6]])
+  p = np.average(ex, axis = 0, weights = [0.2, 0.2, 0.6])
+  p
+#+end_src
+
+#+RESULTS:
+| 0.58 | 0.42 |
+
+#+begin_src python :session :results value
+  np.argmax(p)
+#+end_src
+
+#+RESULTS:
+: 0
+
+#+begin_src python :session :results value
+  from sklearn.base import BaseEstimator
+  from sklearn.base import ClassifierMixin
+  from sklearn.preprocessing import LabelEncoder
+  from sklearn.base import clone
+  from sklearn.pipeline import _name_estimators
+  import numpy as np
+  import operator
+
+  class MajorityVoteClassifier(BaseEstimator, ClassifierMixin):
+      """ A majority vote ensemble classifier
+
+      Parameters
+      ----------
+      classifiers : array-like, shape = [n_classifiers]
+        Different classifiers for the ensemble
+
+      vote : str, {'classlabel', 'probability'} (default='classlabel')
+        If 'classlabel' the prediction is based on the argmax of
+          class labels. Else if 'probability', the argmax of
+          the sum of probabilities is used to predict the class label
+          (recommended for calibrated classifiers).
+
+      weights : array-like, shape = [n_classifiers], optional (default=None)
+        If a list of `int` or `float` values are provided, the classifiers
+        are weighted by importance; Uses uniform weights if `weights=None`.
+      """
+
+      def __init__(self, classifiers, vote = "classlabel", weights = None):
+          self.classifier = classifiers
+          self.named_classifiers = {key: value for key, value
+                                    in _name_estimators(classifiers)}
+          self.vote = vote
+          self.weights = weights
+
+      def fit(self, X, y):
+          """ Fit classifiers.
+
+          Parameters
+          ----------
+          X : {array-like, sparse matrix}, shape = [n_examples, n_features]
+              Matrix of training examples.
+
+          y : array-like, shape = [n_examples]
+              Vector of target class labels.
+
+          Returns
+          -------
+          self : object
+
+          """
+
+          if self.vote not in ("probability", "classlabel"):
+              raise ValueError("vote must be 'probability' or 'classlabel'"
+                               "; got (vote=%r)"
+                               % self.vote)
+
+          if self.weights and len(self.weights) != len(self.classifiers):
+              raise ValueError("Number of classifiers and weights must be equal"
+                               "; got %d weights, %d classifiers"
+                               % (len(self.weights), len(self.classifiers)))
+
+          self.lablenc_ = LabelEncoder()
+          self.lablenc_.fit(y)
+          self.classes_ = self.lablenc_.classes_
+          self.classifiers_ = []
+          for clf in self.classifiers:
+              fitted_clf = clone(clf).fit(X, self.lablenc_.transform(y))
+              self.classifiers_.append(fitted_clf)
+          return self
+#+end_src
+
+#+RESULTS:
