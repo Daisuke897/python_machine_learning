@@ -330,3 +330,106 @@ Irisデータセットのデータを50%の訓練データと50%のテストデ�
 
 #+RESULTS:
 [[file:images/07_04.png]]
+
+#+begin_src python :session :results file link
+  sc = StandardScaler()
+  X_train_std = sc.fit_transform(X_train)
+  from itertools import product
+  # 決定領域を描画する最小値、最大値を生成
+  x_min = X_train_std[:, 0].min() - 1
+  x_max = X_train_std[:, 0].max() + 1
+  y_min = X_train_std[:, 1].min() - 1
+  y_max = X_train_std[:, 1].max() + 1
+  # グリッドポイントを生成
+  xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
+                       np.arange(y_min, y_max, 0.1))
+  # 描画領域を2行2列に分割
+  plt.close("all")
+  f, axarr = plt.subplots(nrows = 2, ncols = 2,
+                          sharex = "col",
+                          sharey = "row",
+                          figsize = (7, 5))
+  # 決定領域のプロット、青や赤の散布図の作成などを実行
+  # 変数idxは各分類器を描画する行と列の位置を表すタプル
+  for idx, clf, tt in zip(product([0, 1], [0, 1]), all_clf, clf_labels):
+        clf.fit(X_train_std, y_train)
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        axarr[idx[0], idx[1]].contourf(xx, yy, Z, alpha = 0.3)
+        axarr[idx[0], idx[1]].scatter(X_train_std[y_train == 0, 0],
+                                      X_train_std[y_train == 0, 1],
+                                      c = "blue",
+                                      marker = "^",
+                                      s = 50)
+        axarr[idx[0], idx[1]].scatter(X_train_std[y_train == 1, 0],
+                                      X_train_std[y_train == 1, 1],
+                                      c = "green",
+                                      marker = "o",
+                                      s = 50)
+        axarr[idx[0], idx[1]].set_title(tt)
+
+  plt.text(-3.5, -5.,
+           s = "Sepal width [standardized]",
+           ha = "center",
+           va = "center",
+           fontsize = 12)
+  plt.text(-12.5, 4.5,
+           s = "Petal length [standardized]",
+           ha = "center",
+           va = "center",
+           fontsize = 12,
+           rotation = 90)
+
+  fname = "images/07_05.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/07_05.png]]
+
+パラメータにアクセスする
+#+begin_src python :session :results output
+  print(mv_clf.get_params())
+#+end_src
+
+#+RESULTS:
+: {'pipeline-1': Pipeline(steps=[('sc', StandardScaler()),
+:                 ['clf', LogisticRegression(C=0.001, random_state=1)]]), 'decisiontreeclassifier': DecisionTreeClassifier(criterion='entropy', max_depth=1, random_state=0), 'pipeline-2': Pipeline(steps=[('sc', StandardScaler()),
+:                 ['clf', KNeighborsClassifier(n_neighbors=1)]]), 'pipeline-1__memory': None, 'pipeline-1__steps': [('sc', StandardScaler()), ['clf', LogisticRegression(C=0.001, random_state=1)]], 'pipeline-1__verbose': False, 'pipeline-1__sc': StandardScaler(), 'pipeline-1__clf': LogisticRegression(C=0.001, random_state=1), 'pipeline-1__sc__copy': True, 'pipeline-1__sc__with_mean': True, 'pipeline-1__sc__with_std': True, 'pipeline-1__clf__C': 0.001, 'pipeline-1__clf__class_weight': None, 'pipeline-1__clf__dual': False, 'pipeline-1__clf__fit_intercept': True, 'pipeline-1__clf__intercept_scaling': 1, 'pipeline-1__clf__l1_ratio': None, 'pipeline-1__clf__max_iter': 100, 'pipeline-1__clf__multi_class': 'deprecated', 'pipeline-1__clf__n_jobs': None, 'pipeline-1__clf__penalty': 'l2', 'pipeline-1__clf__random_state': 1, 'pipeline-1__clf__solver': 'lbfgs', 'pipeline-1__clf__tol': 0.0001, 'pipeline-1__clf__verbose': 0, 'pipeline-1__clf__warm_start': False, 'decisiontreeclassifier__ccp_alpha': 0.0, 'decisiontreeclassifier__class_weight': None, 'decisiontreeclassifier__criterion': 'entropy', 'decisiontreeclassifier__max_depth': 1, 'decisiontreeclassifier__max_features': None, 'decisiontreeclassifier__max_leaf_nodes': None, 'decisiontreeclassifier__min_impurity_decrease': 0.0, 'decisiontreeclassifier__min_samples_leaf': 1, 'decisiontreeclassifier__min_samples_split': 2, 'decisiontreeclassifier__min_weight_fraction_leaf': 0.0, 'decisiontreeclassifier__monotonic_cst': None, 'decisiontreeclassifier__random_state': 0, 'decisiontreeclassifier__splitter': 'best', 'pipeline-2__memory': None, 'pipeline-2__steps': [('sc', StandardScaler()), ['clf', KNeighborsClassifier(n_neighbors=1)]], 'pipeline-2__verbose': False, 'pipeline-2__sc': StandardScaler(), 'pipeline-2__clf': KNeighborsClassifier(n_neighbors=1), 'pipeline-2__sc__copy': True, 'pipeline-2__sc__with_mean': True, 'pipeline-2__sc__with_std': True, 'pipeline-2__clf__algorithm': 'auto', 'pipeline-2__clf__leaf_size': 30, 'pipeline-2__clf__metric': 'minkowski', 'pipeline-2__clf__metric_params': None, 'pipeline-2__clf__n_jobs': None, 'pipeline-2__clf__n_neighbors': 1, 'pipeline-2__clf__p': 2, 'pipeline-2__clf__weights': 'uniform'}
+
+ロジスティック回帰分類器の逆正則化パラメータCと決定木の深さをチューニングする
+#+begin_src python :session :results output
+  from sklearn.model_selection import GridSearchCV
+  params = {"decisiontreeclassifier__max_depth": [1, 2],
+            "pipeline-1__clf__C": [0.001, 0.1, 100.0]}
+  grid = GridSearchCV(estimator = mv_clf,
+                      param_grid = params,
+                      cv = 10,
+                      scoring = "roc_auc")
+  grid.fit(X_train, y_train)
+#+end_src
+
+#+RESULTS:
+
+10分割交差検証を実施する
+#+begin_src python :session :results output
+  for r, _ in enumerate(grid.cv_results_["mean_test_score"]):
+      print("%0.3f +/- %0.2f %r"
+            % (grid.cv_results_["mean_test_score"][r],
+               grid.cv_results_["std_test_score"][r] / 2.0,
+               grid.cv_results_["params"][r]))
+
+  print("Best parameters: %s" % grid.best_params_)
+  print("Accuracy: %.2f" % grid.best_score_)
+#+end_src
+
+#+RESULTS:
+: 0.983 +/- 0.02 {'decisiontreeclassifier__max_depth': 1, 'pipeline-1__clf__C': 0.001}
+: 0.983 +/- 0.02 {'decisiontreeclassifier__max_depth': 1, 'pipeline-1__clf__C': 0.1}
+: 0.967 +/- 0.05 {'decisiontreeclassifier__max_depth': 1, 'pipeline-1__clf__C': 100.0}
+: 0.983 +/- 0.02 {'decisiontreeclassifier__max_depth': 2, 'pipeline-1__clf__C': 0.001}
+: 0.983 +/- 0.02 {'decisiontreeclassifier__max_depth': 2, 'pipeline-1__clf__C': 0.1}
+: 0.967 +/- 0.05 {'decisiontreeclassifier__max_depth': 2, 'pipeline-1__clf__C': 100.0}
+: Best parameters: {'decisiontreeclassifier__max_depth': 1, 'pipeline-1__clf__C': 0.001}
+: Accuracy: 0.98
