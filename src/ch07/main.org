@@ -503,7 +503,6 @@ Wineクラス2および3を選択し、「Alcohol」と「OD280/OD315 of diluted
 #+end_src
 
 #+RESULTS:
-: Decision tree train/test accuracies 1.000/0.833
 
 バギング分類器の性能
 #+begin_src python :session :results output
@@ -566,3 +565,79 @@ Wineクラス2および3を選択し、「Alcohol」と「OD280/OD315 of diluted
 2. 2つ目のランダムな訓練データセットd_2を訓練データセットを訓練データセットから非復元抽出し、以前に誤分類されたデータ点の50%を追加して、弱学習器C_2を訓練する
 3. 訓練データセットDから、C_1とC_2の結果が異なる訓練データd_3を洗い出し、3つ目の弱学習器C_3を訓練する
 4. 弱学習器C_1, C_2, C_3を多数決により組み合わせる
+
+** scikit-learnを使ってアダブーストを適用する
+`base_estimator`引数を使って500個の決定株でAdaBoostClassifierを訓練する
+#+begin_src python :session :results output
+    from sklearn.ensemble import AdaBoostClassifier
+    from sklearn.tree import DecisionTreeClassifier
+    tree = DecisionTreeClassifier(criterion = "entropy",
+                                  max_depth = 1,
+                                  random_state = 1)
+    ada = AdaBoostClassifier(estimator = tree,
+                             n_estimators = 500,
+                             learning_rate = 0.1,
+                             random_state = 1,
+                             algorithm = "SAMME")
+    tree = tree.fit(X_train, y_train)
+    y_train_pred = tree.predict(X_train)
+    y_test_pred = tree.predict(X_test)
+    tree_train = accuracy_score(y_train, y_train_pred)
+    tree_test = accuracy_score(y_test, y_test_pred)
+    print("Decision tree train/test accuracies %.3f/%.3f" % (tree_train, tree_test))
+#+end_src
+
+#+RESULTS:
+: Decision tree train/test accuracies 0.916/0.875
+
+#+begin_src python :session :results output
+  ada = ada.fit(X_train, y_train)
+  y_train_pred = ada.predict(X_train)
+  y_test_pred = ada.predict(X_test)
+  ada_train = accuracy_score(y_train, y_train_pred)
+  ada_test = accuracy_score(y_test, y_test_pred)
+  print("AdaBoost train/test accuracies %.3f/%.3f" % (ada_train, ada_test))
+#+end_src
+
+#+RESULTS:
+: AdaBoost train/test accuracies 0.968/0.917
+
+#+begin_src python :session :results file link
+  import matplotlib.pyplot as plt
+  import numpy as np
+
+  x_min = X_train[:, 0].min() - 1
+  x_max = X_train[:, 0].max() + 1
+  y_min = X_train[:, 1].min() - 1
+  y_max = X_train[:, 1].max() + 1
+
+  xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
+                       np.arange(y_min, y_max, 0.1))
+  plt.close("all")
+  f, axarr = plt.subplots(nrows = 1, ncols = 2,
+                          sharex = "col",
+                          sharey = "row",
+                          figsize = (8, 3))
+  for idx, clf, tt in zip([0, 1], [tree, ada], ["Decision tree", "AdaBoost"]):
+      clf.fit(X_train, y_train)
+      Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+      Z = Z.reshape(xx.shape)
+      axarr[idx].contourf(xx, yy, Z, alpha=0.3)
+      axarr[idx].scatter(X_train[y_train == 0, 0],
+                         X_train[y_train == 0, 1], c = "blue", marker = "^")
+      axarr[idx].scatter(X_train[y_train == 1, 0],
+                         X_train[y_train == 1, 1], c = "green", marker = "o")
+      axarr[idx].set_title(tt)
+
+  axarr[0].set_ylabel("Alcohol", fontsize = 12)
+  plt.tight_layout()
+  plt.text(0, -0.2, s = "OD280/OD315 of diluted wines",
+           ha = "center", va = "center", fontsize = 12, transform = axarr[1].transAxes)
+  fname = "images/07_11.png"
+  plt.savefig(fname)
+  fname
+
+#+end_src
+
+#+RESULTS:
+[[file:images/07_11.png]]
