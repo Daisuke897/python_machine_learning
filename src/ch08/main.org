@@ -1,0 +1,17 @@
+*機械学習の適用1 感情分析*
+
+#+begin_src emacs-lisp
+  (pyvenv-activate "~/project/python_machine_learning")
+#+end_src
+
+#+RESULTS:
+
+* IMDbの映画レビューデータセットでのテキスト処理
+
+** 映画レビューデータセットを取得する
+#+begin_src python :session :results value
+  import pyprind
+  import pandas as pd
+  import os
+  # "basepath"の値を展開した映画レビューデータセットのディレクトリに置き換える
+#+end_src
