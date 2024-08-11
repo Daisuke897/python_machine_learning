@@ -28,7 +28,7 @@
               pbar.update()
 
   df.columns = ["review", "sentiment"]
-\
+
 #+end_src
 
 #+RESULTS:
@@ -43,6 +43,7 @@
 #+RESULTS:
 
 #+begin_src python :session :results value
+  import pandas as pd
   df = pd.read_csv("movie_data.csv", encoding = "utf-8")
   df.head(3)
 #+end_src
@@ -119,3 +120,59 @@ DataFrameオブジェクトが50,000行で構成されていることを確認
 : [[0 1 0 1 1 0 1 0 0]
 :  [0 1 0 0 0 1 1 0 1]
 :  [2 3 2 1 1 1 2 1 1]]
+
+** TF-IDFを使って単語の関連性を評価する
+*TF-IDF* は、 *TF* （単語の出現頻度）と *IDF* （逆文章頻度）の積として定義できる。
+
+#+begin_src python :session :results output
+  from sklearn.feature_extraction.text import TfidfTransformer
+  tfidf = TfidfTransformer(use_idf = True, norm = "l2", smooth_idf = True)
+  np.set_printoptions(precision = 2)
+  print(tfidf.fit_transform(count.fit_transform(docs)).toarray())
+
+#+end_src
+
+#+RESULTS:
+: [[0.   0.43 0.   0.56 0.56 0.   0.43 0.   0.  ]
+:  [0.   0.43 0.   0.   0.   0.56 0.43 0.   0.56]
+:  [0.5  0.45 0.5  0.19 0.19 0.19 0.3  0.25 0.19]]
+
+** テキストデータのクレンジング
+テキストデータをクレンジングすることが最初の重要な手順となる
+#+begin_src python :session :results value
+  df.loc[0, "review"][-50:]
+#+end_src
+
+#+RESULTS:
+: is seven.<br /><br />Title (Brazil): Not Available
+
+#+begin_src python :session :results value
+  import re
+  def preprocessor(text):
+      text = re.sub("<[^>]*>", "", text)
+      emoticons = re.findall("(?::|;|=)(?:-)?(?:\)|\(|D|P)", text)
+      return (re.sub("[\W]+", " ", text.lower()) +
+              " ".join(emoticons).replace("-", ""))
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results value
+  preprocessor(df.loc[0, "review"][-50:])
+#+end_src
+
+#+RESULTS:
+: is seven title brazil not available
+
+#+begin_src python :session :results value
+  preprocessor("</a>This :) is :( a test :-)!")
+#+end_src
+
+#+RESULTS:
+: this is a test :) :( :)
+
+#+begin_src python :session :results value
+  df["review"] = df["review"].apply(preprocessor)
+#+end_src
+
+#+RESULTS:
