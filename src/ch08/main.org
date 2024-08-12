@@ -176,3 +176,147 @@ DataFrameオブジェクトが50,000行で構成されていることを確認
 #+end_src
 
 #+RESULTS:
+
+** 文章をトークン化
+
+#+begin_src python :session :results value
+  def tokenizer(text):
+      return text.split()
+
+  tokenizer("runners like running and thus they run")
+
+#+end_src
+
+#+RESULTS:
+| runners | like | running | and | thus | they | run |
+
+Porterステミングアルゴリズム
+#+begin_src python :session :results value
+  from nltk.stem.porter import PorterStemmer
+  porter = PorterStemmer()
+  def tokenizer_porter(text):
+      return [porter.stem(word) for word in text.split()]
+
+  tokenizer_porter("runners like running and thus they run")
+#+end_src
+
+#+RESULTS:
+| runner | like | run | and | thu | they | run |
+
+*ストップワードの除去*
+ストップワードとは、あらゆる種類のテキストに見られるごくありふれた単語のこと
+is, and, has, likeなど
+
+#+begin_src python :session :results value
+  import nltk
+  nltk.download("stopwords")
+#+end_src
+
+#+RESULTS:
+: True
+
+#+begin_src python :session :results value
+  from nltk.corpus import stopwords
+  stop = stopwords.words("english")
+  [w for w in tokenizer_porter("a runner likes running and runs a lot")[-10:]
+   if w not in stop]
+#+end_src
+
+#+RESULTS:
+| runner | like | run | run | lot |
+
+** 文章を分類するロジスティック回帰モデルの訓練
+25,000個の訓練用の文章と25,000個のテスト用の文章に分割する
+#+begin_src python :session :results value
+  X_train = df.loc[:25000, "review"].values
+  y_train = df.loc[:25000, "sentiment"].values
+  X_test = df.loc[25000:, "review"].values
+  y_test = df.loc[25000:, "sentiment"].values
+#+end_src
+
+#+RESULTS:
+
+GridSearchCVオブジェクトを使ってロジスティック回帰モデルの最適なパラメータ集合を求める。
+5分割交差検証
+#+begin_src python :session :results value
+  from sklearn.model_selection import GridSearchCV
+  from sklearn.pipeline import Pipeline
+  from sklearn.linear_model import LogisticRegression
+  from sklearn.feature_extraction.text import TfidfVectorizer
+
+  tfidf = TfidfVectorizer(strip_accents = None,
+                         lowercase = False,
+                         preprocessor = None)
+  param_grid = [{"vect__ngram_range": [(1, 1)],
+                 "vect__stop_words": [stop, None],
+                 "vect__tokenizer": [tokenizer, tokenizer_porter],
+                 "clf__penalty": ["l1", "l2"],
+                 "clf__C": [1.0, 10.0, 100.0]},
+                {"vect__ngram_range": [(1, 1)],
+                 "vect__stop_words": [stop, None],
+                 "vect__tokenizer": [tokenizer, tokenizer_porter],
+                 "vect__use_idf": [False],
+                 "vect__norm": [None],
+                 "clf__penalty": ["l1", "l2"],
+                 "clf__C": [1.0, 10.0, 100.0]}]
+  lr_tfidf = Pipeline([("vect", tfidf),
+                       ("clf", LogisticRegression(random_state = 0,
+                                                  solver = "liblinear"))])
+  gs_lr_tfidf = GridSearchCV(lr_tfidf, param_grid,
+                             scoring = "accuracy",
+                             cv = 5, verbose = 2,
+                             n_jobs = -1)
+  gs_lr_tfidf.fit(X_train, y_train)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+GridSearchCV(cv=5,
+             estimator=Pipeline(steps=[('vect',
+                                        TfidfVectorizer(lowercase=False)),
+                                       ('clf',
+                                        LogisticRegression(random_state=0,
+                                                           solver='liblinear'))]),
+             n_jobs=-1,
+             param_grid=[{'clf__C': [1.0, 10.0, 100.0],
+                          'clf__penalty': ['l1', 'l2'],
+                          'vect__ngram_range': [(1, 1)],
+                          'vect__stop_words': [['i', 'me', 'my', 'myself', 'we',
+                                                'our', 'ours', 'ourselves',
+                                                'you', "you're", "you've...
+                                                'our', 'ours', 'ourselves',
+                                                'you', "you're", "you've",
+                                                "you'll", "you'd", 'your',
+                                                'yours', 'yourself',
+                                                'yourselves', 'he', 'him',
+                                                'his', 'himself', 'she',
+                                                "she's", 'her', 'hers',
+                                                'herself', 'it', "it's", 'its',
+                                                'itself', ...],
+                                               None],
+                          'vect__tokenizer': [<function tokenizer at 0x7f4e6718b1a0>,
+                                              <function tokenizer_porter at 0x7f4e8209e660>],
+                          'vect__use_idf': [False]}],
+             scoring='accuracy', verbose=2)
+#+end_example
+
+#+begin_src python :session :results output
+  print("Best parameter set: %s" % gs_lr_tfidf.best_params_)
+#+end_src
+
+#+RESULTS:
+: Best parameter set: {'clf__C': 10.0, 'clf__penalty': 'l2', 'vect__ngram_range': (1, 1), 'vect__stop_words': None, 'vect__tokenizer': <function tokenizer at 0x7f4e6718b1a0>}
+
+グリッドサーチによって得られた最良のモデルを使って、訓練データ・セットでの5分割交差検証の正解率の平均と、テストデータセットの正解率を出力する
+#+begin_src python :session :results output
+  print("CV Accuracy: %.3f" % gs_lr_tfidf.best_score_)
+  clf = gs_lr_tfidf.best_estimator_
+  print("Test Accuracy: %.3f" % clf.score(X_test, y_test))
+
+#+end_src
+
+#+RESULTS:
+: CV Accuracy: 0.897
+: Test Accuracy: 0.899
+
+映画レビューが肯定的か否定的かをほぼ90%の正解率で予測できる
