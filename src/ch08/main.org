@@ -339,9 +339,9 @@ GridSearchCV(cv=5,
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-aBpvhY/python-LRTDg6:7: SyntaxWarning: invalid escape sequence '\)'
+: /tmp/babel-dhF1K0/python-d6zk5x:7: SyntaxWarning: invalid escape sequence '\)'
 :   emoticons = re.findall("(?::|;|=)(?:-)?(?:\)|\(|D|P)", text)
-: /tmp/babel-aBpvhY/python-LRTDg6:8: SyntaxWarning: invalid escape sequence '\W'
+: /tmp/babel-dhF1K0/python-d6zk5x:8: SyntaxWarning: invalid escape sequence '\W'
 :   text = re.sub("[\W]+", " ", text.lower()) + " ".join(emoticons).replace("-", "")
 
 ジェネレータ関数`stream_docs`
@@ -362,3 +362,72 @@ GridSearchCV(cv=5,
 
 #+RESULTS:
 | "In 1974, the teenager Martha Moxley (Maggie Grace) moves to the high-class area of Belle Haven, Greenwich, Connecticut. On the Mischief Night, eve of Halloween, she was murdered in the backyard of her house and her murder remained unsolved. Twenty-two years later, the writer Mark Fuhrman (Christopher Meloni), who is a former LA detective that has fallen in disgrace for perjury in O.J. Simpson trial and moved to Idaho, decides to investigate the case with his partner Stephen Weeks (Andrew Mitchell) with the purpose of writing a book. The locals squirm and do not welcome them, but with the support of the retired detective Steve Carroll (Robert Forster) that was in charge of the investigation in the 70's, they discover the criminal and a net of power and money to cover the murder.<br /><br />""Murder in Greenwich"" is a good TV movie, with the true story of a murder of a fifteen years old girl that was committed by a wealthy teenager whose mother was a Kennedy. The powerful and rich family used their influence to cover the murder for more than twenty years. However, a snoopy detective and convicted perjurer in disgrace was able to disclose how the hideous crime was committed. The screenplay shows the investigation of Mark and the last days of Martha in parallel, but there is a lack of the emotion in the dramatization. My vote is seven.<br /><br />Title (Brazil): Not Available" | 1 |
+
+`get_minibatch`関数
+#+begin_src python :session :results output
+  def get_minibatch(doc_stream, size):
+      docs, y = [], []
+      try:
+          for _ in range(size):
+              text, label = next(doc_stream)
+              docs.append(text)
+              y.append(label)
+      except StopIteration:
+          return None, None
+      return docs, y
+#+end_src
+
+#+RESULTS:
+
+アウトオブコア学習では、語彙が完全にメモリに読み込まれていることが要求される。
+#+begin_src python :session :results output
+  def get_minibatch(doc_stream, size):
+      docs, y = [], []
+      try:
+          for _ in range(size):
+              text, label = next(doc_stream)
+              docs.append(text)
+              y.append(label)
+      except StopIteration:
+          return None, None
+      return docs, y
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results output
+  from sklearn.feature_extraction.text import HashingVectorizer
+  from sklearn.linear_model import SGDClassifier
+  vect = HashingVectorizer(decode_error = "ignore",
+                           n_features = 2**21,
+                           preprocessor = None,
+                           tokenizer = tokenizer)
+  clf = SGDClassifier(loss = "log_loss", random_state = 1)
+  doc_stream = stream_docs(path = "movie_data.csv")
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session
+  import pyprind
+  pbar = pyprind.ProgBar(45)
+  classes = np.array([0, 1])
+  for _ in range(45):
+      X_train, y_train = get_minibatch(doc_stream, size = 1000)
+      if not X_train:
+          break
+      X_train = vect.transform(X_train)
+      clf.partial_fit(X_train, y_train, classes = classes)
+      pbar.update()
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results output
+  X_test, y_test = get_minibatch(doc_stream, size = 5000)
+  X_test = vect.transform(X_test)
+  print("Accuracy: %.3f" % clf.score(X_test, y_test))
+#+end_src
+
+#+RESULTS:
+: Accuracy: 0.868
