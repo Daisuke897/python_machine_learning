@@ -339,9 +339,9 @@ GridSearchCV(cv=5,
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-dhF1K0/python-d6zk5x:7: SyntaxWarning: invalid escape sequence '\)'
+: /tmp/babel-Oj9kZ8/python-0h4XvQ:7: SyntaxWarning: invalid escape sequence '\)'
 :   emoticons = re.findall("(?::|;|=)(?:-)?(?:\)|\(|D|P)", text)
-: /tmp/babel-dhF1K0/python-d6zk5x:8: SyntaxWarning: invalid escape sequence '\W'
+: /tmp/babel-Oj9kZ8/python-0h4XvQ:8: SyntaxWarning: invalid escape sequence '\W'
 :   text = re.sub("[\W]+", " ", text.lower()) + " ".join(emoticons).replace("-", "")
 
 ジェネレータ関数`stream_docs`
@@ -431,3 +431,52 @@ GridSearchCV(cv=5,
 
 #+RESULTS:
 : Accuracy: 0.868
+
+#+begin_src python :session :results output
+  clf = clf.partial_fit(X_test, y_test)
+#+end_src
+
+#+RESULTS:
+
+* 潜在ディリクレ配分によるトピックモデルの構築
+
+** 潜在ディリクレ配分を使ってテキスト文章を分解する
+潜在ディリクレ配分(LDA)
+トピックの個数は、明示的に指定しなければならないLDAのハイパーパラメータ
+
+** scikit-learnの潜在ディリクレ配分
+
+#+begin_src python :session :results output
+  import pandas as pd
+  df = pd.read_csv("movie_data.csv", encoding = "utf-8")
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results output
+  from sklearn.feature_extraction.text import CountVectorizer
+  count = CountVectorizer(stop_words = "english",
+                          max_df = 0.1,
+                          max_features = 5000)
+  X = count.fit_transform(df["review"].values)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results output
+  from sklearn.decomposition import LatentDirichletAllocation
+  lda = LatentDirichletAllocation(
+      n_components = 10,
+      random_state = 123,
+      learning_method = "batch")
+  X_topics = lda.fit_transform(X)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results value
+  lda.components_.shape
+#+end_src
+
+#+RESULTS:
+| 10 | 5000 |
