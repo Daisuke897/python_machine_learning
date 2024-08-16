@@ -480,3 +480,58 @@ GridSearchCV(cv=5,
 
 #+RESULTS:
 | 10 | 5000 |
+
+10種類のトピック（昇順）ごとに、単語の重要度（5,000個）を含んだ行列が含まれる
+10種類のトピックごとに最も重要な5つの単語を出力する
+
+#+begin_src python :session :results output
+  n_top_words = 5
+  feature_names = count.get_feature_names_out()
+  for topic_idx, topic in enumerate(lda.components_):
+      print("Topic %d:" % (topic_idx + 1))
+      print(" ".join([feature_names[i] for i in topic.argsort() \
+                      [:-n_top_words - 1:-1]]))
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Topic 1:
+horror effects budget special gore
+Topic 2:
+guy worst money minutes stupid
+Topic 3:
+version action japanese english match
+Topic 4:
+book audience human feel documentary
+Topic 5:
+series tv episode shows episodes
+Topic 6:
+family woman father mother girl
+Topic 7:
+music musical role performance song
+Topic 8:
+war police men murder action
+Topic 9:
+script comedy role actor performance
+Topic 10:
+comedy original action watched fan
+#+end_example
+
+#+begin_src python :session :results output
+  horror = X_topics[:, 0].argsort()[::-1]
+  for iter_idx, movie_idx in enumerate(horror[:3]):
+      print("\nHorror movie #%d:" % (iter_idx + 1))
+      print(df["review"][movie_idx][:300], "...")
+#+end_src
+
+#+RESULTS:
+:
+: Horror movie #1:
+: Over Christmas break, a group of college friends stay behind to help prepare the dorms to be torn down and replaced by apartment buildings. To make the work a bit more difficult, a murderous, Chucks-wearing psycho is wandering the halls of the dorm, preying on the group in various violent ways.<br / ...
+:
+: Horror movie #2:
+: A group of friends discover gold deep inside an old mine. But by taking the gold and thinking they've hit it big, they awaken a long dead miner who's Hell Bent on protecting his treasure. "Miner's Massacre" is a chintzy b-horror movie in the extreme. You've got all your familiar clichés, your group  ...
+:
+: Horror movie #3:
+: God Bless 80's slasher films. This is a fun, fun movie. This is what slasher films are all about. Now I'm not saying horror movies, just slasher films. It goes like this: A high school nerd is picked on by all these stupid jocks and cheerleaders, and then one of their pranks goes horribly wrong. Dis ...
