@@ -32,3 +32,37 @@
 : 2  0.02729   0.0   7.07     0  0.469  7.185  61.1  4.9671    2  242.0     17.8  392.83   4.03  34.7
 : 3  0.03237   0.0   2.18     0  0.458  6.998  45.8  6.0622    3  222.0     18.7  394.63   2.94  33.4
 : 4  0.06905   0.0   2.18     0  0.458  7.147  54.2  6.0622    3  222.0     18.7  396.90   5.33  36.2
+** データセットの重要な特性を可視化する
+*探索的データ解析* 機械学習モデルを訓練する前の最初の重要なステップとして推奨
+*散布図行列* を作成する
+
+#+begin_src python :session :results file link
+  import matplotlib.pyplot as plt
+  from mlxtend.plotting import scatterplotmatrix
+  cols = ["LSTAT", "INDUS", "NOX", "RM", "MEDV"]
+  plt.close("all")
+  scatterplotmatrix(df[cols].values, figsize=(10, 8), names = cols, alpha = 0.5)
+  plt.tight_layout()
+
+  fname = "images/10_03.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/10_03.png]]
+** 相関行列を使って関係を調べる
+
+#+begin_src python :session :results file link
+  from mlxtend.plotting import heatmap
+  import numpy as np
+  plt.close("all")
+  cm = np.corrcoef(df[cols].values.T) # ピアソンの積率相関係数を計算
+  hm = heatmap(cm, row_names = cols, column_names = cols)
+  fname = "images/10_04.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/10_04.png]]
