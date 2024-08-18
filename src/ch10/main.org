@@ -66,3 +66,116 @@
 
 #+RESULTS:
 [[file:images/10_04.png]]
+
+* 最小二乗線形回帰モデルの実装
+
+** 勾配降下法を使って回帰パラメータの回帰を解く
+
+#+begin_src python :session
+  # 基本的な線形回帰モデル
+  class LinearRegressionGD(object):
+
+      # 初期化を実行する__init__
+      def __init__(self, eta=0.001, n_iter = 20):
+          self.eta = eta          # 学習率
+          self.n_iter = n_iter    # 訓練回数
+
+      # 訓練を実行するfit
+      def fit(self, X, y):
+          self.w_ = np.zeros(1 + X.shape[1]) # 重みを初期化
+          self.cost_ = []                    # コスト関数の値を初期化
+          for i in range(self.n_iter):
+              output = self.net_input(X) # 活性化関数の出力を計算
+              errors = (y - output)      # 誤差を計算
+              self.w_[1:] += self.eta * X.T.dot(errors) # 重みw_{1}以降を更新
+              self.w_[0] += self.eta * errors.sum()     # 重みw_{0}を更新
+              cost = (errors ** 2).sum() / 2.0          # コスト関数を計算
+              self.cost_.append(cost)                   # コスト関数の値を格納
+          return self
+
+      # 総入力を計算するnet_input
+      def net_input(self, X):
+          return np.dot(X, self.w_[1:]) + self.w_[0]
+
+      # 予測値を計算するpredict
+      def predict(self, X):
+          return self.net_input(X)
+#+end_src
+
+#+RESULTS:
+
+説明変数としてRM（1戸あたりの平均部屋数）を使う
+#+begin_src python :session :results value
+  X = df[["RM"]].values
+  y = df["MEDV"].values
+  from sklearn.preprocessing import StandardScaler
+  sc_x = StandardScaler()
+  sc_y = StandardScaler()
+  X_std = sc_x.fit_transform(X)
+  y_std = sc_y.fit_transform(y[:, np.newaxis]).flatten()
+  lr = LinearRegressionGD()
+  lr.fit(X_std, y_std)
+#+end_src
+
+#+RESULTS:
+: <__main__.LinearRegressionGD object at 0x7ff147560f80>
+
+#+begin_src python :session :results file link
+  # エポック数とコストの関係を表す折れ線グラフのプロット
+  plt.close("all")
+  plt.plot(range(1, lr.n_iter + 1), lr.cost_)
+  plt.ylabel("SSE")
+  plt.xlabel("Epoch")
+
+  fname = "images/10_05.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/10_05.png]]
+
+線形回帰の直線が訓練データにどの程度適合しているかを可視化する
+
+#+begin_src python :session
+  def lin_regplot(X, y, model):
+      plt.scatter(X, y, c = "steelblue", edgecolor = "white", s = 70)
+      plt.plot(X, model.predict(X), color = "black", lw = 2)
+      return None
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results file link
+  plt.close("all")
+  lin_regplot(X_std, y_std, lr)
+  plt.xlabel("Average number of rooms [RM] (standardized)")
+  plt.ylabel("Price in $1000s [MEDV] (standardized)")
+
+  fname = "images/10_06.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/10_06.png]]
+
+#+begin_src python :session :results output
+  num_rooms_std = sc_x.transform(np.array([[5.0]]))
+  price_std = lr.predict(num_rooms_std)
+  print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
+#+end_src
+
+#+RESULTS:
+: /tmp/babel-aPre28/python-HBXAWQ:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+:   print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
+: Price in $1000s: 10.840
+
+#+begin_src python :session :results output
+  print("Slope: %.3f" % lr.w_[1])
+  print("Intercept: %.3f" % lr.w_[0])
+#+end_src
+
+#+RESULTS:
+: Slope: 0.695
+: Intercept: -0.000
