@@ -118,7 +118,7 @@
 #+end_src
 
 #+RESULTS:
-: <__main__.LinearRegressionGD object at 0x7ff147560f80>
+: <__main__.LinearRegressionGD object at 0x7f4448c1d730>
 
 #+begin_src python :session :results file link
   # エポック数とコストの関係を表す折れ線グラフのプロット
@@ -167,7 +167,7 @@
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-aPre28/python-HBXAWQ:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+: /tmp/babel-mXH3mf/python-3bOJSR:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
 :   print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
 : Price in $1000s: 10.840
 
@@ -179,3 +179,51 @@
 #+RESULTS:
 : Slope: 0.695
 : Intercept: -0.000
+
+** scikit-learnを使って回帰モデルの係数を推定する
+#+begin_src python :session :results output
+  from sklearn.linear_model import LinearRegression
+  slr = LinearRegression()
+  slr.fit(X, y)
+  y_pred = slr.predict(X)
+  print("Slope: %.3f" % slr.coef_[0])
+  print("Intercept: %.3f" % slr.intercept_)
+#+end_src
+
+#+RESULTS:
+: Slope: 9.102
+: Intercept: -34.671
+
+#+begin_src python :session :results file link
+  plt.close("all")
+  lin_regplot(X, y, slr)
+  plt.xlabel("Average number of rooms [RM]")
+  plt.ylabel("Price in $1000s [MEDV]")
+
+  fname = "images/10_07.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/10_07.png]]
+
+* RANSACを使ったロバスト回帰モデルの学習
+*RANSAC* アルゴリズム
+回帰モデルにデータのサブセットいわゆる正常値を学習させる
+RANSACアルゴリズムと線形モデルを組み合わせる
+#+begin_src python :session :results value
+  from sklearn.linear_model import RANSACRegressor
+  # RANSACモデルをインスタンス化
+  ransac = RANSACRegressor(LinearRegression(),
+                           max_trials = 100,
+                           min_samples = 50,
+                           loss = "absolute_error",
+                           residual_threshold = 5.0,
+                           random_state = 0)
+  ransac.fit(X, y)
+#+end_src
+
+#+RESULTS:
+: RANSACRegressor(estimator=LinearRegression(), min_samples=50, random_state=0,
+:                 residual_threshold=5.0)
