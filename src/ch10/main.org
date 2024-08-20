@@ -118,7 +118,7 @@
 #+end_src
 
 #+RESULTS:
-: <__main__.LinearRegressionGD object at 0x7f4448c1d730>
+: <__main__.LinearRegressionGD object at 0x7f4826a1cda0>
 
 #+begin_src python :session :results file link
   # エポック数とコストの関係を表す折れ線グラフのプロット
@@ -167,7 +167,7 @@
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-mXH3mf/python-3bOJSR:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+: /tmp/babel-q35Ncd/python-ZEaqc6:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
 :   print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
 : Price in $1000s: 10.840
 
@@ -227,3 +227,54 @@ RANSACアルゴリズムと線形モデルを組み合わせる
 #+RESULTS:
 : RANSACRegressor(estimator=LinearRegression(), min_samples=50, random_state=0,
 :                 residual_threshold=5.0)
+
+#+begin_src python :session :results file link
+  inlier_mask = ransac.inlier_mask_ # 正常値を表す真偽値を取得
+  outlier_mask = np.logical_not(inlier_mask) # 外れ値を表す真偽値を取得
+  line_X = np.arange(3, 10, 1)               # 3から9までの整数値を作成
+  line_y_ransac = ransac.predict(line_X[:, np.newaxis]) # 予測値を計算
+  plt.close("all")
+  # 正常値をプロット
+  plt.scatter(X[inlier_mask], y[inlier_mask],
+              c = "steelblue", edgecolor = "white", marker = "o", label = "Inliers")
+  # 外れ値をプロット
+  plt.scatter(X[outlier_mask], y[outlier_mask],
+              c = "limegreen", edgecolor = "white", marker = "s", label = "Outliers")
+  # 予測値をプロットする
+  plt.plot(line_X, line_y_ransac, color = "black", lw = 2)
+  plt.xlabel("Average number of rooms [RM]")
+  plt.ylabel("Price in $1000s [MEDV]")
+  plt.legend(loc = "upper left")
+
+  fname = "images/10_08.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/10_08.png]]
+
+モデルの切片と傾き
+#+begin_src python :session :results output
+  print("Slope: %.3f" % ransac.estimator_.coef_[0])
+  print("Intercept: %.3f" % ransac.estimator_.intercept_)
+#+end_src
+
+#+RESULTS:
+: Slope: 10.735
+: Intercept: -44.089
+
+* 線形回帰モデルの性能評価
+#+begin_src python :session :results output
+  from sklearn.model_selection import train_test_split
+  X = df.iloc[:, :-1].values
+  y = df["MEDV"].values
+  X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                      test_size = 0.3, random_state = 0)
+  slr = LinearRegression()
+  slr.fit(X_train, y_train)
+  y_train_pred = slr.predict(X_train)
+  y_test_pred = slr.predict(X_test)
+#+end_src
+
+#+RESULTS:
