@@ -118,7 +118,7 @@
 #+end_src
 
 #+RESULTS:
-: <__main__.LinearRegressionGD object at 0x7fe954802e40>
+: <__main__.LinearRegressionGD object at 0x7f3fa0f43620>
 
 #+begin_src python :session :results file link
   # エポック数とコストの関係を表す折れ線グラフのプロット
@@ -167,7 +167,7 @@
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-iwrz9C/python-WGML0D:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+: /tmp/babel-rHQblt/python-iycHNp:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
 :   print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
 : Price in $1000s: 10.840
 
@@ -326,3 +326,116 @@ RANSACアルゴリズムと線形モデルを組み合わせる
 
 #+RESULTS:
 : R^2 train: 0.765, test: 0.673
+
+* 回帰に正則化手法を使う
+正則化された線形回帰の最も一般的なアプローチ
+- リッジ回帰
+  L2ペナルティ
+- LASSO
+  L1ペナルティ
+- Elastic Net法
+  L1ペナルティとL2ペナルティ
+
+#+begin_src python :session :results output
+  from sklearn.linear_model import Ridge
+  ridge = Ridge(alpha = 1.0)      # L2ペナルティ項の影響度合いを表す値を引数に指定
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results output
+  from sklearn.linear_model import Lasso
+  lasso = Lasso(alpha = 1.0)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :session :results output
+  from sklearn.linear_model import ElasticNet
+  elanet = ElasticNet(alpha = 1.0, l1_ratio = 0.5)
+#+end_src
+
+#+RESULTS:
+
+* 多項式回帰：線形回帰モデルから曲線を見出す
+
+** scikit-learnを使って多項式の項を追加する
+1. 多項式の2次の項を追加する
+   #+begin_src python :session :results output
+     from sklearn.preprocessing import PolynomialFeatures
+     X = np.array([258.0, 270.0, 294.0,
+                   320.0, 342.0, 368.0,
+                   396.0, 446.0, 480.0, 586.0])\
+                  [:, np.newaxis]
+
+     y = np.array([236.4, 234.4, 252.8,
+                   298.6, 314.2, 342.2,
+                   360.8, 368.0, 391.2,
+                   390.8])
+     # 線形回帰（最小二乗法）モデルのクラスをインスタンス化
+     lr = LinearRegression()
+     pr = LinearRegression()
+     # 2次の多項式特徴量のクラスをインスタンス化
+     quadratic = PolynomialFeatures(degree = 2)
+     X_quad = quadratic.fit_transform(X)
+   #+end_src
+
+   #+RESULTS:
+
+2. 比較を可能にするために、単回帰モデルを学習させる
+   #+begin_src python :session :results output
+      lr.fit(X, y)
+      # np.newaxisで列ベクトルにする
+      X_fit = np.arange(250, 600, 10)[:, np.newaxis]
+      # 予測値を計算
+      y_lin_fit = lr.predict(X_fit)
+   #+end_src
+
+   #+RESULTS:
+
+3. 多項式回帰のために、変換された特徴量で重回帰モデルを学習させる
+   #+begin_src python :session :results output
+      pr.fit(X_quad, y)
+      # 2次式でyの値を計算
+      y_quad_fit = pr.predict(quadratic.fit_transform(X_fit))
+   #+end_src
+
+   #+RESULTS:
+
+4. 結果をプロットする
+   #+begin_src python :session :results file link
+     # 散布図、線型回帰モデル、多項式回帰モデルの結果をプロット
+
+     plt.close("all")
+
+     plt.scatter(X, y, label = "Training points")
+     plt.plot(X_fit, y_lin_fit, label = "Linear fit", linestyle = "--")
+     plt.plot(X_fit, y_quad_fit, label = "Quadratic fit")
+     plt.xlabel("Explanatory variable")
+     plt.ylabel("Predicted or known target values")
+     plt.legend(loc = "upper left")
+     plt.tight_layout()
+
+     fname = "images/10_11.png"
+
+     plt.savefig(fname)
+
+     fname
+   #+end_src
+
+   #+RESULTS:
+   [[file:images/10_11.png]]
+
+5. 評価手法として平均二条誤差とR2を計算する
+   #+begin_src python :session :results output
+     y_lin_pred = lr.predict(X)
+     y_quad_pred = pr.predict(X_quad)
+     print("Training MSE linear: %.3f, quadratic: %.3f" %
+           (mean_squared_error(y, y_lin_pred), mean_squared_error(y, y_quad_pred)))
+     print("Training R^2 linear: %.3f, quadratic: %.3f" %
+           (r2_score(y, y_lin_pred), r2_score(y, y_quad_pred)))
+   #+end_src
+
+   #+RESULTS:
+   : Training MSE linear: 569.780, quadratic: 61.330
+   : Training R^2 linear: 0.832, quadratic: 0.982
