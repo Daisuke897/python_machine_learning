@@ -118,7 +118,7 @@
 #+end_src
 
 #+RESULTS:
-: <__main__.LinearRegressionGD object at 0x7f3fa0f43620>
+: <__main__.LinearRegressionGD object at 0x7f26952b85f0>
 
 #+begin_src python :session :results file link
   # エポック数とコストの関係を表す折れ線グラフのプロット
@@ -167,7 +167,7 @@
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-rHQblt/python-iycHNp:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+: /tmp/babel-uh6w9X/python-M23RxO:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
 :   print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
 : Price in $1000s: 10.840
 
@@ -439,3 +439,50 @@ RANSACアルゴリズムと線形モデルを組み合わせる
    #+RESULTS:
    : Training MSE linear: 569.780, quadratic: 61.330
    : Training R^2 linear: 0.832, quadratic: 0.982
+
+**  Housingデータセットで非線形関係をモデル化する
+ #+begin_src python :session :results file link
+   X = df[["LSTAT"]].values
+   y = df["MEDV"].values
+   regr = LinearRegression()
+
+   quadratic = PolynomialFeatures(degree=2)
+   cubic = PolynomialFeatures(degree=3)
+   X_quad = quadratic.fit_transform(X)
+   X_cubic = cubic.fit_transform(X)
+
+   X_fit = np.arange(X.min(), X.max(), 1)[:,  np.newaxis]
+   regr = regr.fit(X, y)
+   y_lin_fit = regr.predict(X_fit)
+   linear_r2 = r2_score(y, regr.predict(X))
+
+   regr = regr.fit(X_quad, y)
+   y_quad_fit = regr.predict(quadratic.fit_transform(X_fit))
+   quadratic_r2 = r2_score(y, regr.predict(X_quad))
+
+   regr = regr.fit(X_cubic, y)
+   y_cubic_fit = regr.predict(cubic.fit_transform(X_fit))
+   cubic_r2 = r2_score(y, regr.predict(X_cubic))
+
+   plt.close("all")
+
+   plt.scatter(X, y, label = "Training points", color = "lightgray")
+   plt.plot(X_fit, y_lin_fit, label = "Linear (d=1), $R^2 = %.2f$" %
+            linear_r2, color = "blue", lw = 2, linestyle = ":")
+   plt.plot(X_fit, y_quad_fit, label = "Quadratic (d=2), $R^2 = %.2f$" %
+            quadratic_r2, color = "red", lw = 2, linestyle = "-")
+   plt.plot(X_fit, y_cubic_fit, label = "Cubic (d=3), $R^2 = %.2f$" %
+            cubic_r2, color = "green", lw = 2, linestyle = "--")
+   plt.xlabel("% lower status of population [LSTAT]")
+   plt.ylabel("Price in $1000s [MEDV]")
+   plt.legend(loc = "upper right")
+
+   fname = "images/10_12.png"
+
+   plt.savefig(fname)
+
+   fname
+ #+end_src
+
+ #+RESULTS:
+ [[file:images/10_12.png]]
