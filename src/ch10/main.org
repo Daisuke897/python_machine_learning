@@ -118,7 +118,7 @@
 #+end_src
 
 #+RESULTS:
-: <__main__.LinearRegressionGD object at 0x7f26952b85f0>
+: <__main__.LinearRegressionGD object at 0x7ff62269daf0>
 
 #+begin_src python :session :results file link
   # エポック数とコストの関係を表す折れ線グラフのプロット
@@ -167,7 +167,7 @@
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-uh6w9X/python-M23RxO:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+: /tmp/babel-SlMf7Y/python-x9uSmP:3: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
 :   print("Price in $1000s: %.3f" % sc_y.inverse_transform(price_std[:, np.newaxis]).flatten())
 : Price in $1000s: 10.840
 
@@ -441,48 +441,93 @@ RANSACアルゴリズムと線形モデルを組み合わせる
    : Training R^2 linear: 0.832, quadratic: 0.982
 
 **  Housingデータセットで非線形関係をモデル化する
- #+begin_src python :session :results file link
-   X = df[["LSTAT"]].values
-   y = df["MEDV"].values
-   regr = LinearRegression()
+#+begin_src python :session :results file link
+  X = df[["LSTAT"]].values
+  y = df["MEDV"].values
+  regr = LinearRegression()
 
-   quadratic = PolynomialFeatures(degree=2)
-   cubic = PolynomialFeatures(degree=3)
-   X_quad = quadratic.fit_transform(X)
-   X_cubic = cubic.fit_transform(X)
+  quadratic = PolynomialFeatures(degree=2)
+  cubic = PolynomialFeatures(degree=3)
+  X_quad = quadratic.fit_transform(X)
+  X_cubic = cubic.fit_transform(X)
 
-   X_fit = np.arange(X.min(), X.max(), 1)[:,  np.newaxis]
-   regr = regr.fit(X, y)
-   y_lin_fit = regr.predict(X_fit)
-   linear_r2 = r2_score(y, regr.predict(X))
+  X_fit = np.arange(X.min(), X.max(), 1)[:,  np.newaxis]
+  regr = regr.fit(X, y)
+  y_lin_fit = regr.predict(X_fit)
+  linear_r2 = r2_score(y, regr.predict(X))
 
-   regr = regr.fit(X_quad, y)
-   y_quad_fit = regr.predict(quadratic.fit_transform(X_fit))
-   quadratic_r2 = r2_score(y, regr.predict(X_quad))
+  regr = regr.fit(X_quad, y)
+  y_quad_fit = regr.predict(quadratic.fit_transform(X_fit))
+  quadratic_r2 = r2_score(y, regr.predict(X_quad))
 
-   regr = regr.fit(X_cubic, y)
-   y_cubic_fit = regr.predict(cubic.fit_transform(X_fit))
-   cubic_r2 = r2_score(y, regr.predict(X_cubic))
+  regr = regr.fit(X_cubic, y)
+  y_cubic_fit = regr.predict(cubic.fit_transform(X_fit))
+  cubic_r2 = r2_score(y, regr.predict(X_cubic))
 
-   plt.close("all")
+  plt.close("all")
 
-   plt.scatter(X, y, label = "Training points", color = "lightgray")
-   plt.plot(X_fit, y_lin_fit, label = "Linear (d=1), $R^2 = %.2f$" %
-            linear_r2, color = "blue", lw = 2, linestyle = ":")
-   plt.plot(X_fit, y_quad_fit, label = "Quadratic (d=2), $R^2 = %.2f$" %
-            quadratic_r2, color = "red", lw = 2, linestyle = "-")
-   plt.plot(X_fit, y_cubic_fit, label = "Cubic (d=3), $R^2 = %.2f$" %
-            cubic_r2, color = "green", lw = 2, linestyle = "--")
-   plt.xlabel("% lower status of population [LSTAT]")
-   plt.ylabel("Price in $1000s [MEDV]")
-   plt.legend(loc = "upper right")
+  plt.scatter(X, y, label = "Training points", color = "lightgray")
+  plt.plot(X_fit, y_lin_fit, label = "Linear (d=1), $R^2 = %.2f$" %
+           linear_r2, color = "blue", lw = 2, linestyle = ":")
+  plt.plot(X_fit, y_quad_fit, label = "Quadratic (d=2), $R^2 = %.2f$" %
+           quadratic_r2, color = "red", lw = 2, linestyle = "-")
+  plt.plot(X_fit, y_cubic_fit, label = "Cubic (d=3), $R^2 = %.2f$" %
+           cubic_r2, color = "green", lw = 2, linestyle = "--")
+  plt.xlabel("% lower status of population [LSTAT]")
+  plt.ylabel("Price in $1000s [MEDV]")
+  plt.legend(loc = "upper right")
 
-   fname = "images/10_12.png"
+  fname = "images/10_12.png"
 
-   plt.savefig(fname)
+  plt.savefig(fname)
 
-   fname
- #+end_src
+  fname
+#+end_src
 
- #+RESULTS:
- [[file:images/10_12.png]]
+#+RESULTS:
+[[file:images/10_12.png]]
+
+#+begin_src python :session :results file link
+  # 特徴量を変換
+  X_log = np.log(X)
+  y_sqrt = np.sqrt(y)
+
+  # 特徴量の学習、予測、決定係数の計算
+  X_fit = np.arange(X_log.min() - 1, X_log.max() + 1, 1)[:, np.newaxis]
+  regr = regr.fit(X_log, y_sqrt)
+  y_lin_fit = regr.predict(X_fit)
+  linear_r2 = r2_score(y_sqrt, regr.predict(X_log))
+
+  # 射影したデータを使った学習結果をプロット
+  plt.close("all")
+  plt.scatter(X_log, y_sqrt, label = "Training points", color = "lightgray")
+  plt.plot(X_fit, y_lin_fit, label = "Linear (d = 1), $R^2 = %.2f" % linear_r2,
+           color = "blue", lw = 2)
+  plt.xlabel("log(% lower status of the population [LSTAT])")
+  plt.ylabel("$\sqrt(Price \; in \; \$1000s [MEDV])")
+  plt.legend(loc = "lower left")
+  plt.tight_layout()
+
+  fname = "images/10_13.png"
+
+  plt.savefig(fname)
+
+  fname
+
+#+end_src
+
+#+RESULTS:
+[[file:images/10_13.png]]
+
+** ランダムフォレストを使って非線形関係に対処する
+
+#+begin_src python :session :results file link
+  plt.close("all")
+
+  fname = "images/10_14.png"
+
+  plt.savefig(fname)
+
+  fname
+
+#+end_src
