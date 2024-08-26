@@ -1,0 +1,51 @@
+*クラスタ分析 ―ラベルなしのデータ分析*
+
+*教師なし学習法* に属するクラスタ分析について
+
+#+begin_src emacs-lisp
+  (pyvenv-activate "~/project/python_machine_learning")
+#+end_src
+
+#+RESULTS:
+
+* k-means法を使った類似度によるオブジェクトのグループ化
+
+** scikit-learnを使ったk-meansクラスタリング
+k-means法の問題点の1つは、クラスタの個数kを指定しなければならないこと
+
+#+begin_src python :session :results file link
+  from sklearn.datasets import make_blobs
+
+  X, y = make_blobs(n_samples = 150, # データ点の個数
+                    n_features = 2,  # 特徴量の個数
+                    centers = 3,     # クラスタの個数
+                    cluster_std = 0.5, # クラスタ内の標準偏差
+                    shuffle = True,    # データ点のシャッフル
+                    random_state = 0)  # 乱数生成器の状態を指定
+
+  import matplotlib.pyplot as plt
+  plt.scatter(X[:, 0], X[:, 1], c = "white", marker = "o", edgecolor = "black", s = 50)
+  plt.grid()
+  plt.tight_layout()
+
+  fname = "images/11_01.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_01.png]]
+
+#+begin_src python :session :results output
+  from sklearn.cluster import KMeans
+
+  km = KMeans(n_clusters = 3,     # クラスタの個数
+              init = "random",    # セントロイドの初期値をランダムに選択
+              n_init = 10,
+              max_iter = 300,     # k-meansアルゴリズム内部の最大イテレーション回数
+              tol = 1e-04,        # 収束と判定するための相対的な許容誤差
+              random_state = 0)   # セントロイドの初期化に用いる乱数生成器の状態
+  y_km = km.fit_predict(X)        # クラスタ中心の計算と各データ点のインデックスの予測
+#+end_src
+
+#+RESULTS:
