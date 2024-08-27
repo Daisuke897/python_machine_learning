@@ -49,3 +49,45 @@ k-means法の問題点の1つは、クラスタの個数kを指定しなけれ�
 #+end_src
 
 #+RESULTS:
+
+#+begin_src python :session :results file link
+  plt.close("all")
+  plt.scatter(X[y_km == 0, 0],
+              X[y_km == 0, 1],
+              s = 50,
+              c = "lightgreen",
+              edgecolor = "black",
+              marker = "s",
+              label = "Cluster 1")
+  plt.scatter(X[y_km == 1, 0],
+              X[y_km == 1, 1],
+              s = 50,
+              c = "orange",
+              edgecolor = "black",
+              marker = "o",
+              label = "Cluster 2")
+  plt.scatter(X[y_km == 2, 0],
+              X[y_km == 2, 1],
+              s = 50,
+              c = "lightblue",
+              edgecolor = "black",
+              marker = "v",
+              label = "Cluster 3")
+  plt.scatter(km.cluster_centers_[:,0],
+              km.cluster_centers_[:,1],
+              s = 250,
+              marker = "*",
+              c = "red",
+              edgecolor = "black",
+              label = "Centroids")
+  plt.legend(scatterpoints = 1)
+  plt.grid()
+  plt.tight_layout()
+
+  fname = "images/11_02.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_02.png]]
