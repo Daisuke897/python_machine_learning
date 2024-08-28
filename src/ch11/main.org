@@ -91,3 +91,45 @@ k-means法の問題点の1つは、クラスタの個数kを指定しなけれ�
 
 #+RESULTS:
 [[file:images/11_02.png]]
+
+** k-means++法を使ってセントロイドの初期値をよりスマートに設定する
+
+** ハードクラスタリングとソフトクラスタリング
+- *ハードクラスタリング* データセットのデータ点がそれぞれちょうど1つのクラスタに割り当てられるアルゴリズム
+- *ソフトクラスタリング* データ点を1つ以上のクラスタに割り当てるアルゴリズム
+
+** エルボー法を使ってクラスタの最適な個数を求める
+#+begin_src python :session :results output
+  print("Distortion: %.2f" % km.inertia_)
+#+end_src
+
+#+RESULTS:
+: Distortion: 72.48
+
+#+begin_src python :session :results file link
+  distortions = []
+
+  for i in range(1, 11):
+      km = KMeans(
+          n_clusters = i,
+          init = 'k-means++',
+          n_init = 10,
+          max_iter = 300,
+          random_state = 0)
+      km.fit(X)
+      distortions.append(km.inertia_)
+
+  plt.close("all")
+  plt.plot(range(1, 11), distortions, marker = "o")
+  plt.xlabel("Number of clusters")
+  plt.ylabel("Distortion")
+  plt.tight_layout()
+  fname = "images/11_03.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_03.png]]
+
+k=3が良さそう
