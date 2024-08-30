@@ -155,8 +155,9 @@ k=3が良さそう
   # シルエット係数を計算
   silhouette_vals = silhouette_samples(X, y_km, metric = "euclidean")
   y_ax_lower, y_ax_upper = 0, 0
-  y_ticks = []
+  yticks = []
 
+  plt.close("all")
   for i, c in enumerate(cluster_labels):
       c_silhouette_vals = silhouette_vals[y_km == c]
       c_silhouette_vals.sort()
@@ -167,4 +168,34 @@ k=3が良さそう
                height = 1.0,                  # 棒の高さ
                edgecolor = 'none',            # 棒の端の色
                color = color)                 # 棒の色
+      yticks.append((y_ax_lower + y_ax_upper) / 2.) # クラスタレベルの表示位置を追加
+      y_ax_lower += len(c_silhouette_vals)          # 底辺の棒の幅を追加
+
+  silhouette_avg = np.mean(silhouette_vals) # シルエット係数の平均値
+  plt.axvline(silhouette_avg, color = "red", linestyle = "--") # 係数の平均値に破線を引く
+  plt.yticks(yticks, cluster_labels + 1)                       # クラスラベルを表示
+  plt.ylabel("Cluster")
+  plt.xlabel("Silhouette coefficient")
+  plt.tight_layout()
+
+  fname = "images/11_06.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_06.png]]
+
+シルエット係数の値が1であれば「よいクラスタリング」を示すことになる。
+このシルエット図は1から程遠い。
+
+比較的悪いクラスタリングならどうなる？
+#+begin_src python :session :results file link
+  km = KMeans(n_clusters = 2,
+              init = "k-means++",
+              n_init = 10,
+              max_iter = 300,
+              tol = 1e-04,
+              random_state = 0)
+  y_km = km.fit_predict(X)
 #+end_src
