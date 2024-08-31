@@ -178,13 +178,13 @@ k=3が良さそう
   plt.xlabel("Silhouette coefficient")
   plt.tight_layout()
 
-  fname = "images/11_06.png"
+  fname = "images/11_04.png"
   plt.savefig(fname)
   fname
 #+end_src
 
 #+RESULTS:
-[[file:images/11_06.png]]
+[[file:images/11_04.png]]
 
 シルエット係数の値が1であれば「よいクラスタリング」を示すことになる。
 このシルエット図は1から程遠い。
@@ -198,4 +198,95 @@ k=3が良さそう
               tol = 1e-04,
               random_state = 0)
   y_km = km.fit_predict(X)
+  plt.close("all")
+  plt.scatter(X[y_km == 0, 0],
+              X[y_km == 0, 1],
+              s = 50,
+              c = "lightgreen",
+              edgecolor = "black",
+              marker = "s",
+              label = "Cluster 1")
+  plt.scatter(X[y_km == 1, 0],
+              X[y_km == 1, 1],
+              s = 50,
+              c = "orange",
+              edgecolor = "black",
+              marker = "o",
+              label = "Cluster 2")
+  plt.scatter(km.cluster_centers_[:, 0],
+              km.cluster_centers_[:, 1],
+              s = 250,
+              marker = "*",
+              c = "red",
+              label = "Centroids")
+  plt.legend()
+  plt.grid()
+  plt.tight_layout()
+
+  fname = "images/11_05.png"
+  plt.savefig(fname)
+  fname
 #+end_src
+
+#+RESULTS:
+[[file:images/11_05.png]]
+
+結果を評価するシルエット図を作成する
+#+begin_src python :session :results file link
+  cluster_labels = np.unique(y_km)
+  n_clusters = cluster_labels.shape[0]
+  silhouette_vals = silhouette_samples(X, y_km, metric = "euclidean")
+  y_ax_lower, y_ax_upper = 0, 0
+  yticks = []
+
+  plt.close("all")
+  for i, c in enumerate(cluster_labels):
+      c_silhouette_vals = silhouette_vals[y_km == c]
+      c_silhouette_vals.sort()
+      y_ax_upper += len(c_silhouette_vals)
+      color = cm.jet(float(i) / n_clusters)
+      plt.barh(range(y_ax_lower, y_ax_upper),
+               c_silhouette_vals,
+               height = 1.0,
+               edgecolor = "none",
+               color = color)
+      yticks.append((y_ax_lower + y_ax_upper) / 2.)
+      y_ax_lower += len(c_silhouette_vals)
+
+  silhouette_avg = np.mean(silhouette_vals)
+  plt.axvline(silhouette_avg, color = "red", linestyle = "--")
+  plt.yticks(yticks, cluster_labels + 1)
+  plt.ylabel("Cluster")
+  plt.xlabel("Silhouette coefficient")
+  plt.tight_layout()
+
+  fname = "images/11_06.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_06.png]]
+
+* クラスタを階層木として構成する
+
+** ボトムアップ方式でのクラスタのグループ化
+
+#+begin_src python :session :results value
+  import pandas as pd
+  import numpy as np
+  np.random.seed(123)
+  variables = ["X", "Y", "Z"]
+  labels = ["ID_0", "ID_1", "ID_2", "ID_3", "ID_4"]
+  X = np.random.random_sample([5, 3]) * 10
+  df = pd.DataFrame(X, columns = variables, index = labels)
+  df
+#+end_src
+
+#+RESULTS:
+:              X         Y         Z
+: ID_0  6.964692  2.861393  2.268515
+: ID_1  5.513148  7.194690  4.231065
+: ID_2  9.807642  6.848297  4.809319
+: ID_3  3.921175  3.431780  7.290497
+: ID_4  4.385722  0.596779  3.980443
