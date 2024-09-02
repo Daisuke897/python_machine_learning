@@ -607,3 +607,30 @@ linkage(y, method='single', metric='euclidean', optimal_ordering=False)
 [[file:images/11_11.png]]
 
 ユークリッド距離を指標とした場合、データ点ID_0とID_4、ID_1とID_2が最も類似度の高いサンプルである。
+
+** 樹形図をヒートマップと組み合わせる
+#+begin_src python :session :results file link
+  plt.close("all")
+  fig = plt.figure(figsize = (8, 8), facecolor = "white")
+  axd = fig.add_axes([0.09, 0.1, 0.2, 0.6]) # x軸の位置、y軸の位置、幅、高さ
+  row_dendr = dendrogram(row_clusters, orientation = "left")
+
+  df_rowclust = df.iloc[row_dendr["leaves"][::-1]]
+
+  axm = fig.add_axes([0.23, 0.1, 0.6, 0.6])
+  cax = axm.matshow(df_rowclust, interpolation = "nearest", cmap = "hot_r")
+  axd.set_xticks([])
+  axd.set_yticks([])
+  for i in axd.spines.values():
+      i.set_visible(False)
+  fig.colorbar(cax)
+  axm.set_xticklabels([" "] + list(df_rowclust.columns))
+  axm.set_yticklabels([" "] + list(df_rowclust.index))
+
+  fname = "images/11_12.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_12.png]]
