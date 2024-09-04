@@ -683,7 +683,86 @@ k-means法、階層的クラスタリング、DBSCANを比較する
 [[file:images/11_14.png]]
 
 #+begin_src python :session :results file link
+  plt.close("all")
   f, (ax1, ax2) = plt.subplots(1, 2, figsize = (8, 3))
   km = KMeans(n_clusters = 2, random_state = 0)
   y_km = km.fit_predict(X)
+  ax1.scatter(X[y_km == 0, 0],
+              X[y_km == 0, 1],
+              c = "lightblue",
+              edgecolor = "black",
+              marker = "o",
+              s = 40,
+              label = "cluster 1")
+  ax1.scatter(X[y_km == 1, 0],
+              X[y_km == 1, 1],
+              c = "red",
+              edgecolor = "black",
+              marker = "s",
+              s = 40,
+              label = "cluster 2")
+  ax1.set_title("K-means clustering")
+  ac = AgglomerativeClustering(n_clusters = 2,
+                               metric = "euclidean",
+                               linkage = "complete")
+  y_ac = ac.fit_predict(X)
+  ax2.scatter(X[y_ac == 0, 0],
+              X[y_ac == 0, 1],
+              c = "lightblue",
+              edgecolor = "black",
+              marker = "o",
+              s = 40,
+              label = "Cluster 1")
+  ax2.scatter(X[y_ac == 1, 0],
+              X[y_ac == 1, 1],
+              c = "red",
+              edgecolor = "black",
+              marker = "s",
+              s = 40,
+              label = "Cluster 2")
+  ax2.set_title("Agglomerative clustering")
+  plt.legend()
+  plt.tight_layout()
+
+  fname = "images/11_15.png"
+  plt.savefig(fname)
+  fname
+
 #+end_src
+
+#+RESULTS:
+[[file:images/11_15.png]]
+
+このデータセットにDBSCANアルゴリズムを適用する。
+
+#+begin_src python :session :results file link
+  from sklearn.cluster import DBSCAN
+  db = DBSCAN(eps = 0.2,            # 隣接点と見なす2点間の最大距離
+              min_samples = 5,      # ボーダー点の最小個数
+              metric = "euclidean") # 距離の計算法
+  y_db = db.fit_predict(X)
+  plt.close("all")
+  plt.scatter(X[y_db == 0, 0],
+              X[y_db == 0, 1],
+              c = "lightblue",
+              edgecolor = "black",
+              marker = "o",
+              s = 40,
+              label = "cluster 1")
+  plt.scatter(X[y_db == 1, 0],
+              X[y_db == 1, 1],
+              c = "red",
+              edgecolor = "black",
+              marker = "s",
+              s = 40,
+              label = "cluster 2")
+  plt.legend()
+  plt.tight_layout()
+
+  fname = "images/11_16.png"
+  plt.savefig(fname)
+  fname
+#+end_src
+
+#+RESULTS:
+[[file:images/11_16.png]]
