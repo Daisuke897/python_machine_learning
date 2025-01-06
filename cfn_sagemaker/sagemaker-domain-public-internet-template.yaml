@@ -180,6 +180,7 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         - "arn:aws:iam::aws:policy/AWSCodeCommitPowerUser"
+        - "arn:aws:iam::aws:policy/AmazonQDeveloperAccess"
       Policies:
         - PolicyName: SecurityAndNetworking
           PolicyDocument:
@@ -213,6 +214,15 @@ Resources:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
+                Resource: "*"
+        - PolicyName: CodeRecommendations
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codewhisperer:GenerateRecommendations
+                  - codewhisperer:ListCustomizations
                 Resource: "*"
 
   DomainUserProfile:
