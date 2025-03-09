@@ -232,6 +232,10 @@ Resources:
       UserProfileName: !Ref UserProfileName
       UserSettings:
         ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+        JupyterLabAppSettings:
+          CodeRepositories:
+            - RepositoryUrl: https://github.com/Daisuke897/python_machine_learning.git
+            - RepositoryUrl: https://github.com/ItoMasaki/PixyzRL.git
 
 Outputs:
   SageMakerVPC:
